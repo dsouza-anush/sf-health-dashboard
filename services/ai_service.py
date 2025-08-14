@@ -58,7 +58,8 @@ if model:
     health_agent = Agent(
         model,
         output_type=HealthAlertCategorization,
-        instructions=HEALTH_ANALYZER_INSTRUCTIONS
+        instructions=HEALTH_ANALYZER_INSTRUCTIONS,
+        enable_pydantic_schema_transformation=False  # Disable schema transformation to avoid $defs error
     )
 
 def get_default_categorization(error_message: Optional[str] = None) -> HealthAlertCategorization:
@@ -102,6 +103,16 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     try:
         # Get categorization from the AI agent with proper error handling
         result = await health_agent.run(user_message)
+        # Ensure we have valid values in the result
+        if not result.category:
+            result.category = "Configuration"
+        if not result.priority:
+            result.priority = "medium"
+        if not result.summary:
+            result.summary = "AI analysis completed but produced incomplete results."
+        if not result.recommendation:
+            result.recommendation = "Review the alert details manually for appropriate action."
+            
         return result
     except Exception as e:
         print(f"Error in AI categorization: {str(e)}")

@@ -59,7 +59,21 @@ class HealthAlert(HealthAlertBase):
 
 class HealthAlertCategorization(BaseModel):
     """Model for AI categorization result"""
-    category: str = Field(..., description="The most appropriate category for this health alert")
-    priority: PriorityLevel = Field(..., description="The priority level for this health alert")
-    summary: str = Field(..., description="A concise summary of the health alert")
-    recommendation: str = Field(..., description="A recommended action to resolve the health alert")
+    category: str = Field(description="The most appropriate category for this health alert")
+    priority: PriorityLevel = Field(description="The priority level for this health alert")
+    summary: str = Field(description="A concise summary of the health alert")
+    recommendation: str = Field(description="A recommended action to resolve the health alert")
+    
+    # Define model_config to avoid $defs error with Pydantic v2
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "category": "Configuration",
+                    "priority": "medium",
+                    "summary": "System settings need adjustment for optimal performance.",
+                    "recommendation": "Update configuration parameters in the admin console."
+                }
+            ]
+        }
+    }
