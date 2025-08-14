@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from database.models import HealthAlert as DBHealthAlert, HealthCategory
 from models.schemas import HealthAlertCreate, HealthAlertUpdate, HealthAlert as SchemaHealthAlert
@@ -135,7 +136,7 @@ async def get_dashboard_stats(db: Session) -> dict:
     
     # Count by AI category
     ai_categories = {}
-    ai_category_results = db.query(DBHealthAlert.ai_category, db.func.count(DBHealthAlert.id)) \
+    ai_category_results = db.query(DBHealthAlert.ai_category, func.count(DBHealthAlert.id)) \
         .filter(DBHealthAlert.ai_category.isnot(None)) \
         .group_by(DBHealthAlert.ai_category) \
         .all()
