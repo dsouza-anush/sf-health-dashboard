@@ -43,11 +43,7 @@ model = None
 if INFERENCE_API_KEY:
     model = OpenAIModel(
         'claude-4-sonnet',
-        provider=HerokuProvider(api_key=INFERENCE_API_KEY),
-        model_kwargs={
-            "temperature": 0.2,  # Lower temperature for more consistent categorization
-            "max_tokens": 1000,
-        }
+        provider=HerokuProvider(api_key=INFERENCE_API_KEY)
     )
 
 # Create a properly configured Pydantic AI agent
