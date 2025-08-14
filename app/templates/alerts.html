@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - Salesforce Health Check{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Health Alerts</h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Filter Alerts</span>
+                <a href="/categorize-all" class="btn btn-sm btn-primary">Categorize All</a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <select id="category-filter" class="form-select mb-2">
+                            <option value="">Filter by Category</option>
+                            <option value="optimizer">Optimizer</option>
+                            <option value="security">Security</option>
+                            <option value="limits">Limits</option>
+                            <option value="event">Event</option>
+                            <option value="stability">Stability</option>
+                            <option value="portal">Portal</option>
+                            <option value="exceptions">Exceptions</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="priority-filter" class="form-select mb-2">
+                            <option value="">Filter by Priority</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                            <option value="null">Uncategorized</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="status-filter" class="form-select mb-2">
+                            <option value="">Filter by Status</option>
+                            <option value="false">Open</option>
+                            <option value="true">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Source</th>
+                                <th>AI Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr class="alert-row" 
+                                data-category="{{ alert.category }}" 
+                                data-priority="{{ alert.ai_priority }}" 
+                                data-status="{{ alert.is_resolved }}">
+                                <td>{{ alert.id }}</td>
+                                <td>{{ alert.title }}</td>
+                                <td>{{ alert.category }}</td>
+                                <td>{{ alert.source_system }}</td>
+                                <td>
+                                    {% if alert.ai_category %}
+                                    <span class="badge bg-info">{{ alert.ai_category }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Uncategorized</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.ai_priority == "critical" %}
+                                    <span class="badge bg-danger">Critical</span>
+                                    {% elif alert.ai_priority == "high" %}
+                                    <span class="badge bg-warning">High</span>
+                                    {% elif alert.ai_priority == "medium" %}
+                                    <span class="badge bg-primary">Medium</span>
+                                    {% elif alert.ai_priority == "low" %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.is_resolved %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Open</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="/alert/{{ alert.id }}" class="btn btn-sm btn-info">View</a>
+                                        {% if not alert.ai_category %}
+                                        <button class="btn btn-sm btn-primary categorize-btn" data-id="{{ alert.id }}">
+                                            Categorize
+                                        </button>
+                                        {% endif %}
+                                        {% if not alert.is_resolved %}
+                                        <button class="btn btn-sm btn-success resolve-btn" data-id="{{ alert.id }}">
+                                            Resolve
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-warning unresolve-btn" data-id="{{ alert.id }}">
+                                            Reopen
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter functionality
+        const categoryFilter = document.getElementById('category-filter');
+        const priorityFilter = document.getElementById('priority-filter');
+        const statusFilter = document.getElementById('status-filter');
+        const alertRows = document.querySelectorAll('.alert-row');
+        
+        function applyFilters() {
+            const categoryValue = categoryFilter.value;
+            const priorityValue = priorityFilter.value;
+            const statusValue = statusFilter.value;
+            
+            alertRows.forEach(row => {
+                const category = row.getAttribute('data-category');
+                const priority = row.getAttribute('data-priority');
+                const status = row.getAttribute('data-status');
+                
+                let showRow = true;
+                
+                if (categoryValue && category !== categoryValue) {
+                    showRow = false;
+                }
+                
+                if (priorityValue) {
+                    if (priorityValue === 'null' && priority !== null && priority !== '') {
+                        showRow = false;
+                    } else if (priorityValue !== 'null' && priority !== priorityValue) {
+                        showRow = false;
+                    }
+                }
+                
+                if (statusValue && status !== statusValue) {
+                    showRow = false;
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+        
+        categoryFilter.addEventListener('change', applyFilters);
+        priorityFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        
+        // Categorize button
+        document.querySelectorAll('.categorize-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const alertId = this.getAttribute('data-id');
+                this.disabled = true;
+                this.textContent = 'Processing...';
+                
+                fetch(`/api/alerts/${alertId}/categorize`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error categorizing alert:', error);
+                        this.disabled = false;
+                        this.textContent = 'Categorize';
+                        alert('Error categorizing alert. Please try again.');
+                    });
+            });
+        });
+        
+        // Resolve button
+        document.querySelectorAll('.resolve-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const alertId = this.getAttribute('data-id');
+                this.disabled = true;
+                this.textContent = 'Processing...';
+                
+                fetch(`/api/alerts/${alertId}/resolve`, { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error resolving alert:', error);
+                        this.disabled = false;
+                        this.textContent = 'Resolve';
+                        alert('Error resolving alert. Please try again.');
+                    });
+            });
+        });
+        
+        // Unresolve button
+        document.querySelectorAll('.unresolve-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const alertId = this.getAttribute('data-id');
+                this.disabled = true;
+                this.textContent = 'Processing...';
+                
+                fetch(`/api/alerts/${alertId}/unresolve`, { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error reopening alert:', error);
+                        this.disabled = false;
+                        this.textContent = 'Reopen';
+                        alert('Error reopening alert. Please try again.');
+                    });
+            });
+        });
+    });
+</script>
+{% endblock %}

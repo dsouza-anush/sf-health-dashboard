@@ -1,0 +1,36 @@
+{
+  "name": "Salesforce Health Check Dashboard",
+  "description": "A web application that consolidates Salesforce health metrics and uses Claude AI to categorize issues",
+  "keywords": [
+    "python",
+    "fastapi",
+    "salesforce",
+    "claude",
+    "ai",
+    "pydantic"
+  ],
+  "repository": "https://github.com/yourusername/sf-health-agent",
+  "success_url": "/",
+  "env": {
+    "HEROKU_INFERENCE_API_KEY": {
+      "description": "API key for Heroku Inference API",
+      "required": true
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    },
+    {
+      "plan": "heroku-inference:claude-4-sonnet"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "python -c \"from database.seed import seed_database; seed_database()\""
+  }
+}

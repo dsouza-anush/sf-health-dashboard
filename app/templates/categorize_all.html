@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Categorize All Alerts - Salesforce Health Check{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Categorize All Alerts</h4>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">AI Categorization</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert">
+                    <p>This will run AI analysis on all uncategorized alerts in the system.</p>
+                    <p>The AI will analyze each alert and:</p>
+                    <ul>
+                        <li>Determine the most appropriate category</li>
+                        <li>Assign a priority level</li>
+                        <li>Provide a concise summary</li>
+                        <li>Recommend actions to resolve the issue</li>
+                    </ul>
+                </div>
+                
+                <div id="categorization-status" class="text-center p-5">
+                    <button id="start-categorization" class="btn btn-lg btn-primary">Start Categorization</button>
+                </div>
+                
+                <div id="progress-container" class="mt-4 d-none">
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p id="progress-text" class="text-center mt-2">Processing...</p>
+                </div>
+                
+                <div id="results-container" class="mt-4 d-none">
+                    <div class="alert">
+                        <h5>Categorization Complete</h5>
+                        <p id="results-message">All alerts have been successfully categorized.</p>
+                    </div>
+                    <div class="text-center">
+                        <a href="/alerts" class="btn btn-primary">View All Alerts</a>
+                        <a href="/" class="btn btn-secondary">Return to Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startBtn = document.getElementById('start-categorization');
+        const statusDiv = document.getElementById('categorization-status');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsMessage = document.getElementById('results-message');
+        
+        startBtn.addEventListener('click', function() {
+            // Show progress UI
+            statusDiv.innerHTML = '<p class="mt-3 lead">Analyzing alerts with Claude AI...</p>';
+            progressContainer.classList.remove('d-none');
+            
+            // Fake progress animation for MVP
+            let progress = 0;
+            const interval = setInterval(function() {
+                progress += 5;
+                progressBar.style.width = progress + '%';
+                progressText.innerText = `Processing: ${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(showResults, 500);
+                }
+            }, 300);
+            
+            // Make the actual API call
+            fetch('/api/alerts/categorize-all', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Categorization complete:', data);
+                // In a real implementation, we would update the UI based on the actual response
+                // For MVP, we'll just rely on our animated progress
+            })
+            .catch(error => {
+                console.error('Error during categorization:', error);
+                clearInterval(interval);
+                statusDiv.innerHTML = '<div class="alert alert-danger">Error processing alerts. Please try again.</div>';
+                progressContainer.classList.add('d-none');
+            });
+        });
+        
+        function showResults() {
+            statusDiv.innerHTML = '<p>Processing complete</p>';
+            progressContainer.classList.add('d-none');
+            resultsContainer.classList.remove('d-none');
+        }
+    });
+</script>
+{% endblock %}

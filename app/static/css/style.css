@@ -1,0 +1,270 @@
+/* Dark theme for Salesforce Health Check Dashboard */
+
+:root {
+  --dark-bg: #121212;
+  --dark-card: #1e1e1e;
+  --dark-border: #333;
+  --dark-text: #e0e0e0;
+  --dark-text-secondary: #aaa;
+  --accent: #007aff;
+  --accent-hover: #0056b3;
+  --danger: #ff453a;
+  --warning: #ff9f0a;
+  --success: #30d158;
+  --info: #64d3ff;
+  --header-height: 60px;
+}
+
+/* Base styles */
+.dark-theme {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+/* Typography */
+.dark-theme h1, .dark-theme h2, .dark-theme h3, 
+.dark-theme h4, .dark-theme h5, .dark-theme h6 {
+  color: var(--dark-text);
+}
+
+/* Navigation */
+.dark-theme .navbar {
+  background-color: var(--dark-bg);
+  border-bottom: 1px solid var(--dark-border);
+  height: var(--header-height);
+}
+
+.dark-theme .navbar-brand,
+.dark-theme .nav-link {
+  color: var(--dark-text);
+}
+
+.dark-theme .nav-link:hover,
+.dark-theme .nav-link.active {
+  color: var(--accent);
+}
+
+.dark-theme .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* Cards */
+.dark-theme .card {
+  background-color: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  margin-bottom: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.dark-theme .card:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .card-header {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--dark-border);
+  padding: 12px 16px;
+  font-weight: 500;
+}
+
+.dark-theme .card-body {
+  padding: 16px;
+}
+
+/* Tables */
+.dark-theme .table {
+  color: var(--dark-text);
+}
+
+.dark-theme .table thead th {
+  border-top: none;
+  border-bottom: 1px solid var(--dark-border);
+  color: var(--dark-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.dark-theme .table tbody tr {
+  border-bottom: 1px solid var(--dark-border);
+}
+
+.dark-theme .table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Forms */
+.dark-theme .form-control,
+.dark-theme .form-select {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--dark-border);
+  color: var(--dark-text);
+}
+
+.dark-theme .form-control:focus,
+.dark-theme .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+/* Buttons */
+.dark-theme .btn-primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dark-theme .btn-primary:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.dark-theme .btn-outline-primary {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dark-theme .btn-danger {
+  background-color: var(--danger);
+  border-color: var(--danger);
+}
+
+.dark-theme .btn-success {
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.dark-theme .btn-warning {
+  background-color: var(--warning);
+  border-color: var(--warning);
+}
+
+.dark-theme .btn-info {
+  background-color: var(--info);
+  border-color: var(--info);
+}
+
+/* Badges */
+.dark-theme .badge {
+  padding: 0.25em 0.5em;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.dark-theme .badge.bg-danger {
+  background-color: var(--danger) !important;
+}
+
+.dark-theme .badge.bg-warning {
+  background-color: var(--warning) !important;
+}
+
+.dark-theme .badge.bg-success {
+  background-color: var(--success) !important;
+}
+
+.dark-theme .badge.bg-primary {
+  background-color: var(--accent) !important;
+}
+
+.dark-theme .badge.bg-info {
+  background-color: var(--info) !important;
+}
+
+.dark-theme .badge.bg-secondary {
+  background-color: var(--dark-border) !important;
+}
+
+/* Alert status colors */
+.dark-theme .status-critical {
+  color: var(--danger);
+}
+
+.dark-theme .status-high {
+  color: var(--warning);
+}
+
+.dark-theme .status-medium {
+  color: var(--accent);
+}
+
+.dark-theme .status-low {
+  color: var(--success);
+}
+
+/* Stat cards */
+.dark-theme .stat-card {
+  background-color: var(--dark-card);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--dark-border);
+}
+
+.dark-theme .stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.dark-theme .stat-card .stat-label {
+  color: var(--dark-text-secondary);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Footer */
+.dark-theme footer {
+  border-top: 1px solid var(--dark-border);
+  color: var(--dark-text-secondary);
+}
+
+/* Plot.ly charts customization */
+.dark-theme .js-plotly-plot .plotly .main-svg {
+  background-color: transparent !important;
+}
+
+.dark-theme .js-plotly-plot .plotly .bg {
+  fill: transparent !important;
+}
+
+/* Progress bar */
+.dark-theme .progress {
+  background-color: var(--dark-border);
+}
+
+/* Code blocks */
+.dark-theme pre {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dark-border);
+  border-radius: 4px;
+  padding: 12px;
+  color: var(--dark-text);
+}
+
+/* Alerts */
+.dark-theme .alert {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-left: 4px solid var(--accent);
+}
+
+.dark-theme .alert-info {
+  border-color: var(--info);
+}
+
+.dark-theme .alert-success {
+  border-color: var(--success);
+}
+
+.dark-theme .alert-danger {
+  border-color: var(--danger);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dark-theme .card-body {
+    padding: 12px;
+  }
+}

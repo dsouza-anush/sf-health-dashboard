@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Salesforce Health Check{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Health Check Dashboard</h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Total Alerts</div>
+            <div class="stat-value">{{ stats.total_alerts }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Unresolved</div>
+            <div class="stat-value">{{ stats.unresolved_alerts }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Critical</div>
+            <div class="stat-value status-critical">{{ stats.by_priority.critical }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">Categories</div>
+            <div class="stat-value">{{ stats.by_ai_category | length }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Alerts by Priority
+            </div>
+            <div class="card-body">
+                <div id="priority-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Alerts by Source Category
+            </div>
+            <div class="card-body">
+                <div id="category-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Alerts</span>
+                <a href="/alerts" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Source</th>
+                                <th>AI Category</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>{{ alert.id }}</td>
+                                <td>{{ alert.title }}</td>
+                                <td>{{ alert.source_system }}</td>
+                                <td>
+                                    {% if alert.ai_category %}
+                                    <span class="badge bg-info">{{ alert.ai_category }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Uncategorized</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.ai_priority == "critical" %}
+                                    <span class="badge bg-danger">Critical</span>
+                                    {% elif alert.ai_priority == "high" %}
+                                    <span class="badge bg-warning">High</span>
+                                    {% elif alert.ai_priority == "medium" %}
+                                    <span class="badge bg-primary">Medium</span>
+                                    {% elif alert.ai_priority == "low" %}
+                                    <span class="badge bg-success">Low</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if alert.is_resolved %}
+                                    <span class="badge bg-success">Resolved</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Open</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/alert/{{ alert.id }}" class="btn btn-sm btn-info">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dark mode template for Plotly
+        const darkLayout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: {
+                color: '#e0e0e0'
+            },
+            margin: { t: 0, b: 40, l: 40, r: 20 }
+        };
+        
+        // Priority chart data
+        const priorityData = {
+            values: [
+                {{ stats.by_priority.critical }}, 
+                {{ stats.by_priority.high }}, 
+                {{ stats.by_priority.medium }}, 
+                {{ stats.by_priority.low }},
+                {{ stats.by_priority.uncategorized }}
+            ],
+            labels: ['Critical', 'High', 'Medium', 'Low', 'Uncategorized'],
+            type: 'pie',
+            marker: {
+                colors: ['#ff453a', '#ff9f0a', '#007aff', '#30d158', '#333']
+            },
+            textinfo: 'percent',
+            hole: 0.4
+        };
+
+        // Category chart data
+        const categoryLabels = [
+            {% for category, count in stats.by_category.items() %}
+                "{{ category }}",
+            {% endfor %}
+        ];
+        
+        const categoryValues = [
+            {% for category, count in stats.by_category.items() %}
+                {{ count }},
+            {% endfor %}
+        ];
+
+        const categoryData = {
+            x: categoryLabels,
+            y: categoryValues,
+            type: 'bar',
+            marker: {
+                color: '#007aff'
+            }
+        };
+
+        // Create the charts with dark mode settings
+        const priorityLayout = {
+            ...darkLayout,
+            legend: { orientation: 'h', y: -0.2 }
+        };
+        
+        const categoryLayout = {
+            ...darkLayout,
+            xaxis: { tickangle: -45 }
+        };
+
+        Plotly.newPlot('priority-chart', [priorityData], priorityLayout);
+        Plotly.newPlot('category-chart', [categoryData], categoryLayout);
+    });
+</script>
+{% endblock %}

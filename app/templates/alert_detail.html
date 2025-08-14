@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Alert Details - Salesforce Health Check{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/alerts">Alerts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Alert #{{ alert.id }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{{ alert.title }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">{{ alert.description }}</p>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Source System:</strong> {{ alert.source_system }}</p>
+                        <p><strong>Category:</strong> {{ alert.category }}</p>
+                        <p><strong>Created:</strong> {{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>
+                            <strong>Status:</strong>
+                            {% if alert.is_resolved %}
+                            <span class="badge bg-success">Resolved</span>
+                            {% else %}
+                            <span class="badge bg-warning">Open</span>
+                            {% endif %}
+                        </p>
+                        {% if alert.jira_ticket_id %}
+                        <p><strong>JIRA Ticket:</strong> {{ alert.jira_ticket_id }}</p>
+                        {% endif %}
+                        <p>
+                            <strong>Slack Alert:</strong>
+                            {% if alert.slack_alert_sent %}
+                            <span class="badge bg-success">Sent</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Not Sent</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% if alert.raw_data %}
+                <hr>
+                <h6>Raw Data:</h6>
+                <div class="bg-light p-3 rounded">
+                    <pre class="mb-0"><code>{{ alert.raw_data }}</code></pre>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex gap-2">
+                    <a href="/alerts" class="btn btn-secondary">Back to Alerts</a>
+                    {% if not alert.ai_category %}
+                    <button id="categorize-btn" class="btn btn-primary">Categorize</button>
+                    {% endif %}
+                    {% if alert.is_resolved %}
+                    <button id="unresolve-btn" class="btn btn-warning">Reopen</button>
+                    {% else %}
+                    <button id="resolve-btn" class="btn btn-success">Resolve</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">AI Analysis</h5>
+            </div>
+            <div class="card-body">
+                {% if alert.ai_category %}
+                <div class="mb-3">
+                    <p>
+                        <strong>Category:</strong>
+                        <span class="badge bg-info">{{ alert.ai_category }}</span>
+                    </p>
+                    <p>
+                        <strong>Priority:</strong>
+                        {% if alert.ai_priority == "critical" %}
+                        <span class="badge bg-danger">Critical</span>
+                        {% elif alert.ai_priority == "high" %}
+                        <span class="badge bg-warning">High</span>
+                        {% elif alert.ai_priority == "medium" %}
+                        <span class="badge bg-primary">Medium</span>
+                        {% elif alert.ai_priority == "low" %}
+                        <span class="badge bg-success">Low</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Summary</h6>
+                    <p>{{ alert.ai_summary }}</p>
+                </div>
+                
+                <div>
+                    <h6>Recommendation</h6>
+                    <p>{{ alert.ai_recommendation }}</p>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="lead">This alert hasn't been analyzed yet.</p>
+                    <button id="categorize-btn-alt" class="btn btn-primary">
+                        Run AI Analysis
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if not alert.jira_ticket_id %}
+                    <button id="create-jira-btn" class="btn btn-outline-primary">Create JIRA Ticket</button>
+                    {% endif %}
+                    {% if not alert.slack_alert_sent %}
+                    <button id="send-slack-btn" class="btn btn-outline-primary">Send Slack Alert</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Categorize buttons
+        const categorizeButtons = [
+            document.getElementById('categorize-btn'),
+            document.getElementById('categorize-btn-alt')
+        ];
+        
+        categorizeButtons.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    btn.disabled = true;
+                    btn.textContent = 'Processing...';
+                    
+                    fetch('/api/alerts/{{ alert.id }}/categorize', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Error categorizing alert:', error);
+                            btn.disabled = false;
+                            btn.textContent = 'Categorize';
+                            alert('Error categorizing alert. Please try again.');
+                        });
+                });
+            }
+        });
+        
+        // Resolve button
+        const resolveBtn = document.getElementById('resolve-btn');
+        if (resolveBtn) {
+            resolveBtn.addEventListener('click', function() {
+                resolveBtn.disabled = true;
+                resolveBtn.textContent = 'Processing...';
+                
+                fetch('/api/alerts/{{ alert.id }}/resolve', { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error resolving alert:', error);
+                        resolveBtn.disabled = false;
+                        resolveBtn.textContent = 'Resolve';
+                        alert('Error resolving alert. Please try again.');
+                    });
+            });
+        }
+        
+        // Unresolve button
+        const unresolveBtn = document.getElementById('unresolve-btn');
+        if (unresolveBtn) {
+            unresolveBtn.addEventListener('click', function() {
+                unresolveBtn.disabled = true;
+                unresolveBtn.textContent = 'Processing...';
+                
+                fetch('/api/alerts/{{ alert.id }}/unresolve', { method: 'PUT' })
+                    .then(response => response.json())
+                    .then(data => {
+                        window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error reopening alert:', error);
+                        unresolveBtn.disabled = false;
+                        unresolveBtn.textContent = 'Reopen';
+                        alert('Error reopening alert. Please try again.');
+                    });
+            });
+        }
+        
+        // JIRA button (mock for MVP)
+        const jiraBtn = document.getElementById('create-jira-btn');
+        if (jiraBtn) {
+            jiraBtn.addEventListener('click', function() {
+                alert('Creating JIRA ticket... This functionality will be implemented in Phase 2.');
+            });
+        }
+        
+        // Slack button (mock for MVP)
+        const slackBtn = document.getElementById('send-slack-btn');
+        if (slackBtn) {
+            slackBtn.addEventListener('click', function() {
+                alert('Sending Slack alert... This functionality will be implemented in Phase 2.');
+            });
+        }
+    });
+</script>
+{% endblock %}
