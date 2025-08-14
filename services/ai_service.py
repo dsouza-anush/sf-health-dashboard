@@ -8,17 +8,20 @@ from models.schemas import HealthAlertCategorization, HealthAlert
 
 load_dotenv()
 
-# Get API key from environment - try both naming conventions
-INFERENCE_API_KEY = os.getenv("INFERENCE_API_KEY") or os.getenv("HEROKU_INFERENCE_API_KEY")
+# Get API key from environment - check all possible variable names
+INFERENCE_API_KEY = os.getenv("INFERENCE_API_KEY") or os.getenv("INFERENCE_KEY") or os.getenv("HEROKU_INFERENCE_API_KEY")
+
+if not INFERENCE_API_KEY:
+    print("WARNING: No inference API key found. AI categorization will not work.")
 
 # Initialize the Claude model with Heroku provider
 model = OpenAIModel(
     'claude-4-sonnet',
     provider=HerokuProvider(api_key=INFERENCE_API_KEY),
-)
+) if INFERENCE_API_KEY else None
 
 # Create a Pydantic AI agent
-health_agent = Agent(model)
+health_agent = Agent(model) if model else None
 
 async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorization:
     """
@@ -26,7 +29,17 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     
     This function sends the health alert data to Claude for analysis
     and returns a categorization with priority, summary, and recommended actions.
+    
+    If the AI service is unavailable, returns a default categorization.
     """
+    if not health_agent:
+        # Return default categorization if AI is not available
+        return HealthAlertCategorization(
+            category="Configuration",  
+            priority="medium",
+            summary="AI categorization unavailable - default category assigned",
+            recommendation="Please configure the AI service with a valid API key"
+        )
     
     # Create a system prompt for the AI
     system_prompt = """
@@ -62,11 +75,20 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     Raw Data: {alert.raw_data if alert.raw_data else "None provided"}
     """
     
-    # Get categorization from the AI agent
-    result = await health_agent.run(
-        HealthAlertCategorization, 
-        system_prompt=system_prompt,
-        user_prompt=user_prompt
-    )
-    
-    return result
+    try:
+        # Get categorization from the AI agent
+        result = await health_agent.run(
+            HealthAlertCategorization, 
+            system_prompt=system_prompt,
+            user_prompt=user_prompt
+        )
+        return result
+    except Exception as e:
+        print(f"Error in AI categorization: {str(e)}")
+        # Return fallback categorization if AI fails
+        return HealthAlertCategorization(
+            category="Configuration",
+            priority="medium",
+            summary=f"AI categorization error - default category assigned. Error: {str(e)}",
+            recommendation="Contact support to troubleshoot AI service issues"
+        )

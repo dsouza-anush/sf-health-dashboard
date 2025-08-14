@@ -49,7 +49,7 @@ async def delete_alert(db: Session, alert_id: int) -> bool:
     db.commit()
     return True
 
-async def get_alerts_by_category(db: Session, category: HealthCategory) -> List[SchemaHealthAlert]:
+async def get_alerts_by_category(db: Session, category: str) -> List[SchemaHealthAlert]:
     """Get health alerts by category."""
     alerts = db.query(DBHealthAlert).filter(DBHealthAlert.category == category).all()
     return [SchemaHealthAlert.model_validate(alert) for alert in alerts]
@@ -130,8 +130,8 @@ async def get_dashboard_stats(db: Session) -> dict:
     
     # Count by category
     categories = {}
-    for category in HealthCategory:
-        categories[category.value] = db.query(DBHealthAlert).filter(DBHealthAlert.category == category).count()
+    for category in ["optimizer", "security", "limits", "event", "stability", "portal", "exceptions"]:
+        categories[category] = db.query(DBHealthAlert).filter(DBHealthAlert.category == category).count()
     
     # Count by AI category
     ai_categories = {}

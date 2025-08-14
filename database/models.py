@@ -1,17 +1,17 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 import enum
 
 Base = declarative_base()
 
-class PriorityLevel(enum.Enum):
+class PriorityLevel(str, enum.Enum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
-class HealthCategory(enum.Enum):
+class HealthCategory(str, enum.Enum):
     OPTIMIZER = "optimizer"
     SECURITY = "security"
     LIMITS = "limits"
@@ -26,7 +26,7 @@ class HealthAlert(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
-    category = Column(Enum(HealthCategory), nullable=False)
+    category = Column(String(50), nullable=False)
     source_system = Column(String(100), nullable=False)
     raw_data = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -34,7 +34,7 @@ class HealthAlert(Base):
     
     # AI-generated fields
     ai_category = Column(String(100))
-    ai_priority = Column(Enum(PriorityLevel))
+    ai_priority = Column(String(50))
     ai_summary = Column(Text)
     ai_recommendation = Column(Text)
     
