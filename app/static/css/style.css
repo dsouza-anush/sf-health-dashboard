@@ -1,4 +1,6 @@
 /* Dark theme for Salesforce Health Check Dashboard */
+/* NOTE: This file is being kept for backward compatibility.
+   New styles should be added to modern.css */
 
 :root {
   --dark-bg: #121212;
@@ -386,6 +388,7 @@
   border-left: 4px solid var(--accent);
   border-radius: 6px;
   padding: 16px;
+  color: var(--dark-text);
 }
 
 .dark-theme .alert-info {

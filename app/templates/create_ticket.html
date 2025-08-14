@@ -7,8 +7,8 @@
     <div class="col-12">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="/alerts">Alerts</a></li>
+                <li class="breadcrumb-item"><a href="/" class="text-primary">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/alerts" class="text-primary">Alerts</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Create New Alert</li>
             </ol>
         </nav>
@@ -17,9 +17,9 @@
 
 <div class="row">
     <div class="col-md-8">
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Create New Health Alert</h5>
+                <h5 class="mb-0 fw-semibold">Create New Health Alert</h5>
             </div>
             <div class="card-body">
                 <form id="create-alert-form">
@@ -63,7 +63,7 @@
                         <textarea class="form-control" id="raw_data" name="raw_data" rows="3"></textarea>
                     </div>
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.location.href='/alerts'">Cancel</button>
+                        <button type="button" class="btn btn-outline me-md-2" onclick="window.location.href='/alerts'">Cancel</button>
                         <button type="submit" id="create-btn" class="btn btn-primary">Create & Categorize</button>
                     </div>
                 </form>
@@ -72,9 +72,9 @@
     </div>
 
     <div class="col-md-4">
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0">AI Categorization Demo</h5>
+                <h5 class="mb-0 fw-semibold">AI Categorization Demo</h5>
             </div>
             <div class="card-body">
                 <p>Click "Create & Categorize" to have the AI analyze your alert and provide:</p>
@@ -85,16 +85,19 @@
                     <li>Recommended actions</li>
                 </ul>
                 <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle me-2"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle me-2" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                    </svg>
                     This demonstrates the pydantic-ai agent's ability to analyze and categorize health alerts in real-time.
                 </div>
             </div>
         </div>
 
         <!-- AI Analysis Results (initially hidden) -->
-        <div id="analysis-result" class="card d-none">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">AI Analysis Results</h5>
+        <div id="analysis-result" class="card d-none shadow">
+            <div class="analysis-header">
+                <h5 class="mb-0 fw-semibold">AI Analysis Results</h5>
             </div>
             <div class="card-body">
                 <div id="analysis-loading" class="text-center py-4">
@@ -115,14 +118,14 @@
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <h6 class="border-bottom pb-2 text-primary">Summary</h6>
-                        <p id="ai-summary" class="mt-2"></p>
+                    <div class="mb-3 analysis-result-section">
+                        <h6 class="border-bottom pb-2 text-primary fw-semibold">Summary</h6>
+                        <p id="ai-summary" class="mt-2 analysis-result-content"></p>
                     </div>
                     
-                    <div>
-                        <h6 class="border-bottom pb-2 text-primary">Recommendation</h6>
-                        <p id="ai-recommendation" class="mt-2"></p>
+                    <div class="analysis-result-section">
+                        <h6 class="border-bottom pb-2 text-primary fw-semibold">Recommendation</h6>
+                        <p id="ai-recommendation" class="mt-2 analysis-result-content"></p>
                     </div>
                 </div>
                 <div id="analysis-error" class="d-none">
