@@ -56,15 +56,30 @@ body {
   line-height: 1.5;
 }
 
+body.dark-mode {
+  background-color: var(--neutral-900);
+  color: var(--neutral-50);
+}
+
 /* Dark mode styles */
 .dark-mode {
   background-color: var(--neutral-900);
-  color: var(--neutral-100);
+  color: white;
+}
+
+.dark-mode th,
+.dark-mode td,
+.dark-mode p,
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6,
+.dark-mode span:not(.badge),
+.dark-mode div {
+  color: var(--neutral-50);
 }
 
 .dark-mode .card {
   background-color: var(--neutral-800);
   border-color: var(--neutral-700);
+  color: white;
 }
 
 /* Navigation */
@@ -86,7 +101,7 @@ body {
 }
 
 .dark-mode .navbar-brand {
-  color: var(--neutral-50);
+  color: white;
 }
 
 .nav-link {
@@ -108,7 +123,8 @@ body {
 }
 
 .dark-mode .nav-link {
-  color: var(--neutral-300);
+  color: white;
+  opacity: 0.8;
 }
 
 .dark-mode .nav-link:hover {
@@ -143,6 +159,7 @@ body {
 .dark-mode .card {
   background-color: var(--neutral-800);
   border-color: var(--neutral-700);
+  color: white;
 }
 
 .dark-mode .card-header {
@@ -162,6 +179,7 @@ body {
 .btn-primary {
   background-color: var(--primary);
   color: white;
+  font-weight: var(--font-weight-medium);
 }
 
 .btn-primary:hover {
@@ -190,7 +208,7 @@ body {
 
 .dark-mode .btn-secondary {
   background-color: var(--neutral-700);
-  color: var(--neutral-200);
+  color: white;
 }
 
 .dark-mode .btn-outline {
@@ -232,7 +250,7 @@ body {
 .dark-mode .form-control {
   background-color: var(--neutral-800);
   border-color: var(--neutral-700);
-  color: var(--neutral-200);
+  color: white;
 }
 
 .dark-mode .form-control:focus {
@@ -241,7 +259,7 @@ body {
 }
 
 .dark-mode .form-label {
-  color: var(--neutral-300);
+  color: white;
 }
 
 /* Select dropdown */
@@ -272,8 +290,8 @@ body {
 .dark-mode .form-select {
   background-color: var(--neutral-800);
   border-color: var(--neutral-700);
-  color: var(--neutral-200);
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23D1D5DB' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  color: white;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 /* Badges */
@@ -289,6 +307,16 @@ body {
   border-radius: 9999px;
 }
 
+.dark-mode .badge {
+  color: white !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.dark-mode .badge.bg-warning {
+  color: var(--neutral-900) !important;
+  font-weight: var(--font-weight-semibold);
+}
+
 .badge.bg-primary {
   background-color: var(--primary);
   color: white;
@@ -301,7 +329,8 @@ body {
 
 .badge.bg-warning {
   background-color: var(--warning);
-  color: white;
+  color: var(--neutral-900);
+  font-weight: var(--font-weight-semibold);
 }
 
 .badge.bg-danger {
@@ -311,7 +340,8 @@ body {
 
 .badge.bg-info {
   background-color: var(--info);
-  color: white;
+  color: var(--neutral-900);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Alerts */
@@ -398,16 +428,22 @@ body {
 }
 
 .dark-mode .table {
-  color: var(--neutral-200);
+  color: white;
   border-color: var(--neutral-700);
 }
 
 .dark-mode .table > :not(caption) > * > * {
   border-bottom-color: var(--neutral-700);
+  color: white;
 }
 
 .dark-mode .table > thead {
   border-bottom-color: var(--neutral-600);
+}
+
+.dark-mode .table > thead th {
+  color: white;
+  font-weight: var(--font-weight-medium);
 }
 
 .dark-mode .table tbody tr:hover {
@@ -466,4 +502,22 @@ body {
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* Enhanced dark mode text visibility */
+.dark-mode .text-primary {
+  color: var(--primary) !important;
+}
+
+.dark-mode a {
+  color: var(--primary);
+}
+
+.dark-mode .table td a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.dark-mode .table td a:hover {
+  text-decoration: underline;
 }
