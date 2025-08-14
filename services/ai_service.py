@@ -1,5 +1,6 @@
 import os
-from typing import Optional
+import json
+from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
@@ -52,14 +53,38 @@ if INFERENCE_API_KEY:
         provider=HerokuProvider(api_key=INFERENCE_API_KEY)
     )
 
-# Create a properly configured Pydantic AI agent
+# Define a simplified manual schema that Claude can handle
+SIMPLIFIED_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "category": {
+            "type": "string",
+            "description": "The most appropriate category for this health alert"
+        },
+        "priority": {
+            "type": "string",
+            "description": "The priority level for this health alert",
+            "enum": ["low", "medium", "high", "critical"]
+        },
+        "summary": {
+            "type": "string",
+            "description": "A concise summary of the health alert"
+        },
+        "recommendation": {
+            "type": "string",
+            "description": "A recommended action to resolve the health alert"
+        }
+    },
+    "required": ["category", "priority", "summary", "recommendation"]
+}
+
+# Create a properly configured Pydantic AI agent with manual schema
 health_agent = None
 if model:
     health_agent = Agent(
         model,
-        output_type=HealthAlertCategorization,
+        output_schema=SIMPLIFIED_SCHEMA,  # Use our manually defined schema instead of output_type
         instructions=HEALTH_ANALYZER_INSTRUCTIONS
-        # Note: enable_pydantic_schema_transformation parameter not supported in Heroku's version
     )
 
 def get_default_categorization(error_message: Optional[str] = None) -> HealthAlertCategorization:
@@ -102,18 +127,22 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     
     try:
         # Get categorization from the AI agent with proper error handling
-        result = await health_agent.run(user_message)
-        # Ensure we have valid values in the result
-        if not result.category:
-            result.category = "Configuration"
-        if not result.priority:
-            result.priority = "medium"
-        if not result.summary:
-            result.summary = "AI analysis completed but produced incomplete results."
-        if not result.recommendation:
-            result.recommendation = "Review the alert details manually for appropriate action."
-            
-        return result
+        result_dict = await health_agent.run(user_message)
+        
+        # Convert the raw dict to our Pydantic model
+        try:
+            # Try to parse the result into our Pydantic model
+            result = HealthAlertCategorization(
+                category=result_dict.get('category', 'Configuration'),
+                priority=result_dict.get('priority', 'medium'),
+                summary=result_dict.get('summary', 'AI analysis completed but produced incomplete results.'),
+                recommendation=result_dict.get('recommendation', 'Review the alert details manually for appropriate action.')
+            )
+            return result
+        except Exception as parsing_error:
+            print(f"Error parsing AI result: {parsing_error}")
+            print(f"Raw AI result: {result_dict}")
+            return get_default_categorization(f"Error parsing result: {str(parsing_error)}")
     except Exception as e:
         print(f"Error in AI categorization: {str(e)}")
         return get_default_categorization(str(e))
