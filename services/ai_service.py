@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from pydantic_ai import Agent
@@ -126,23 +127,29 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     """
     
     try:
-        # Get categorization from the AI agent with proper error handling
-        result_dict = await health_agent.run(user_message)
-        
-        # Convert the raw dict to our Pydantic model
+        # Set a timeout for the API call to prevent hanging
         try:
-            # Try to parse the result into our Pydantic model
-            result = HealthAlertCategorization(
-                category=result_dict.get('category', 'Configuration'),
-                priority=result_dict.get('priority', 'medium'),
-                summary=result_dict.get('summary', 'AI analysis completed but produced incomplete results.'),
-                recommendation=result_dict.get('recommendation', 'Review the alert details manually for appropriate action.')
-            )
-            return result
-        except Exception as parsing_error:
-            print(f"Error parsing AI result: {parsing_error}")
-            print(f"Raw AI result: {result_dict}")
-            return get_default_categorization(f"Error parsing result: {str(parsing_error)}")
+            # Get categorization from the AI agent with timeout handling
+            result_dict = await asyncio.wait_for(health_agent.run(user_message), timeout=30.0)
+            print(f"AI Service response received: {result_dict}")
+            
+            # Convert the raw dict to our Pydantic model
+            try:
+                # Try to parse the result into our Pydantic model
+                result = HealthAlertCategorization(
+                    category=result_dict.get('category', 'Configuration'),
+                    priority=result_dict.get('priority', 'medium'),
+                    summary=result_dict.get('summary', 'AI analysis completed but produced incomplete results.'),
+                    recommendation=result_dict.get('recommendation', 'Review the alert details manually for appropriate action.')
+                )
+                return result
+            except Exception as parsing_error:
+                print(f"Error parsing AI result: {parsing_error}")
+                print(f"Raw AI result: {result_dict}")
+                return get_default_categorization(f"Error parsing result: {str(parsing_error)}")
+        except asyncio.TimeoutError:
+            print("AI categorization timed out after 30 seconds")
+            return get_default_categorization("Request timed out after 30 seconds")
     except Exception as e:
         print(f"Error in AI categorization: {str(e)}")
         return get_default_categorization(str(e))
