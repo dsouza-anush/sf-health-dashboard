@@ -8,13 +8,13 @@ from models.schemas import HealthAlertCategorization, HealthAlert
 
 load_dotenv()
 
-# Get API key from environment
-HEROKU_INFERENCE_API_KEY = os.getenv("HEROKU_INFERENCE_API_KEY")
+# Get API key from environment - try both naming conventions
+INFERENCE_API_KEY = os.getenv("INFERENCE_API_KEY") or os.getenv("HEROKU_INFERENCE_API_KEY")
 
 # Initialize the Claude model with Heroku provider
 model = OpenAIModel(
     'claude-4-sonnet',
-    provider=HerokuProvider(api_key=HEROKU_INFERENCE_API_KEY),
+    provider=HerokuProvider(api_key=INFERENCE_API_KEY),
 )
 
 # Create a Pydantic AI agent
