@@ -58,8 +58,8 @@ if model:
     health_agent = Agent(
         model,
         output_type=HealthAlertCategorization,
-        instructions=HEALTH_ANALYZER_INSTRUCTIONS,
-        enable_pydantic_schema_transformation=False  # Disable schema transformation to avoid $defs error
+        instructions=HEALTH_ANALYZER_INSTRUCTIONS
+        # Note: enable_pydantic_schema_transformation parameter not supported in Heroku's version
     )
 
 def get_default_categorization(error_message: Optional[str] = None) -> HealthAlertCategorization:
