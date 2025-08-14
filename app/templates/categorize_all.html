@@ -5,20 +5,58 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Categorize All Alerts</h4>
+        <h4 class="mb-3">Categorize Alerts</h4>
+        <p class="text-muted">Uncategorized alerts that need AI analysis</p>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-12">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Uncategorized Alerts</h5>
+                <button id="categorize-all-btn" class="btn btn-primary">Categorize All</button>
+            </div>
+            <div class="card-body">
+                <div id="loading-alerts" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading uncategorized alerts...</p>
+                </div>
+                
+                <div id="no-alerts" class="alert alert-info d-none">
+                    <p class="mb-0">There are no uncategorized alerts in the system.</p>
+                </div>
+                
+                <div id="alerts-table-container" class="d-none">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Source System</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-table-body">
+                            <!-- Alerts will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">AI Categorization</h5>
             </div>
             <div class="card-body">
-                <div class="alert">
-                    <p>This will run AI analysis on all uncategorized alerts in the system.</p>
-                    <p>The AI will analyze each alert and:</p>
+                <div class="alert alert-info">
+                    <p>The Claude AI agent will analyze each alert and:</p>
                     <ul>
                         <li>Determine the most appropriate category</li>
                         <li>Assign a priority level</li>
@@ -27,27 +65,59 @@
                     </ul>
                 </div>
                 
-                <div id="categorization-status" class="text-center p-5">
-                    <button id="start-categorization" class="btn btn-lg btn-primary">Start Categorization</button>
+                <div id="categorization-status" class="mt-4">
+                    <p class="text-center">Click "Categorize" on an individual alert or "Categorize All" to process multiple alerts.</p>
                 </div>
                 
-                <div id="progress-container" class="mt-4 d-none">
-                    <div class="progress">
-                        <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                <div id="current-analysis" class="d-none">
+                    <h6 class="mb-3">Currently Analyzing:</h6>
+                    <div class="card mb-3 border">
+                        <div class="card-body">
+                            <h6 id="analyzing-title" class="card-title"></h6>
+                            <p id="analyzing-id" class="text-muted small"></p>
+                        </div>
                     </div>
-                    <p id="progress-text" class="text-center mt-2">Processing...</p>
+                    
+                    <div class="text-center mb-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">AI is analyzing this alert...</p>
+                    </div>
                 </div>
                 
-                <div id="results-container" class="mt-4 d-none">
-                    <div class="alert">
-                        <h5>Categorization Complete</h5>
-                        <p id="results-message">All alerts have been successfully categorized.</p>
-                    </div>
-                    <div class="text-center">
-                        <a href="/alerts" class="btn btn-primary">View All Alerts</a>
-                        <a href="/" class="btn btn-secondary">Return to Dashboard</a>
+                <div id="last-result" class="d-none">
+                    <h6 class="mb-3">Last Analysis Result:</h6>
+                    <div class="card border">
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="fw-bold">Category:</span>
+                                <span id="result-category" class="badge bg-info ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Priority:</span>
+                                <span id="result-priority" class="badge ms-2"></span>
+                            </div>
+                            <div class="mb-3">
+                                <span class="fw-bold">Summary:</span>
+                                <p id="result-summary" class="mt-1 small"></p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Progress container for batch processing -->
+        <div id="progress-container" class="card mt-4 d-none">
+            <div class="card-header">
+                <h5 class="mb-0">Batch Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-3">
+                    <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-center">Processing 0/0 alerts</p>
             </div>
         </div>
     </div>
@@ -57,54 +127,262 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const startBtn = document.getElementById('start-categorization');
-        const statusDiv = document.getElementById('categorization-status');
+        const loadingAlertsDiv = document.getElementById('loading-alerts');
+        const noAlertsDiv = document.getElementById('no-alerts');
+        const alertsTableContainer = document.getElementById('alerts-table-container');
+        const alertsTableBody = document.getElementById('alerts-table-body');
+        const categorizeAllBtn = document.getElementById('categorize-all-btn');
+        const currentAnalysis = document.getElementById('current-analysis');
+        const analyzingTitle = document.getElementById('analyzing-title');
+        const analyzingId = document.getElementById('analyzing-id');
+        const lastResult = document.getElementById('last-result');
+        const resultCategory = document.getElementById('result-category');
+        const resultPriority = document.getElementById('result-priority');
+        const resultSummary = document.getElementById('result-summary');
         const progressContainer = document.getElementById('progress-container');
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
-        const resultsContainer = document.getElementById('results-container');
-        const resultsMessage = document.getElementById('results-message');
         
-        startBtn.addEventListener('click', function() {
-            // Show progress UI
-            statusDiv.innerHTML = '<p class="mt-3 lead">Analyzing alerts with Claude AI...</p>';
-            progressContainer.classList.remove('d-none');
+        let uncategorizedAlerts = [];
+        
+        // Load uncategorized alerts when the page loads
+        fetchUncategorizedAlerts();
+        
+        // Function to fetch uncategorized alerts
+        function fetchUncategorizedAlerts() {
+            fetch('/api/alerts/uncategorized/')
+                .then(response => response.json())
+                .then(data => {
+                    uncategorizedAlerts = data;
+                    loadingAlertsDiv.classList.add('d-none');
+                    
+                    if (uncategorizedAlerts.length === 0) {
+                        noAlertsDiv.classList.remove('d-none');
+                        categorizeAllBtn.disabled = true;
+                    } else {
+                        alertsTableContainer.classList.remove('d-none');
+                        renderAlertsTable();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching uncategorized alerts:', error);
+                    loadingAlertsDiv.classList.add('d-none');
+                    noAlertsDiv.classList.remove('d-none');
+                    noAlertsDiv.innerHTML = '<p>Error loading alerts. Please refresh the page to try again.</p>';
+                });
+        }
+        
+        // Function to render the alerts table
+        function renderAlertsTable() {
+            alertsTableBody.innerHTML = '';
             
-            // Fake progress animation for MVP
-            let progress = 0;
-            const interval = setInterval(function() {
-                progress += 5;
-                progressBar.style.width = progress + '%';
-                progressText.innerText = `Processing: ${progress}%`;
+            uncategorizedAlerts.forEach(alert => {
+                const row = document.createElement('tr');
+                row.id = `alert-row-${alert.id}`;
                 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(showResults, 500);
-                }
-            }, 300);
+                row.innerHTML = `
+                    <td>${alert.id}</td>
+                    <td>${alert.title}</td>
+                    <td>${alert.source_system}</td>
+                    <td><span class="badge bg-secondary">Uncategorized</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary categorize-btn" data-alert-id="${alert.id}">
+                            Categorize
+                        </button>
+                    </td>
+                `;
+                
+                alertsTableBody.appendChild(row);
+            });
             
-            // Make the actual API call
-            fetch('/api/alerts/categorize-all', {
+            // Add event listeners to categorize buttons
+            document.querySelectorAll('.categorize-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const alertId = this.getAttribute('data-alert-id');
+                    categorizeAlert(alertId);
+                });
+            });
+        }
+        
+        // Function to categorize a single alert
+        function categorizeAlert(alertId) {
+            const alert = uncategorizedAlerts.find(a => a.id == alertId);
+            if (!alert) return;
+            
+            // Update UI to show what's being analyzed
+            currentAnalysis.classList.remove('d-none');
+            lastResult.classList.add('d-none');
+            analyzingTitle.textContent = alert.title;
+            analyzingId.textContent = `Alert ID: ${alert.id}`;
+            
+            // Disable the categorize button
+            const btn = document.querySelector(`.categorize-btn[data-alert-id="${alertId}"]`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            }
+            
+            // Call the API
+            fetch(`/api/alerts/${alertId}/categorize`, {
                 method: 'POST'
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Categorization complete:', data);
-                // In a real implementation, we would update the UI based on the actual response
-                // For MVP, we'll just rely on our animated progress
+                // Update UI with the result
+                updateResultUI(data);
+                
+                // Update the table row
+                updateTableRow(data);
+                
+                // Remove from uncategorized alerts
+                uncategorizedAlerts = uncategorizedAlerts.filter(a => a.id != alertId);
+                
+                // If no more alerts, show no alerts message
+                if (uncategorizedAlerts.length === 0) {
+                    alertsTableContainer.classList.add('d-none');
+                    noAlertsDiv.classList.remove('d-none');
+                    categorizeAllBtn.disabled = true;
+                }
             })
             .catch(error => {
-                console.error('Error during categorization:', error);
-                clearInterval(interval);
-                statusDiv.innerHTML = '<div class="alert alert-danger">Error processing alerts. Please try again.</div>';
-                progressContainer.classList.add('d-none');
+                console.error('Error categorizing alert:', error);
+                currentAnalysis.classList.add('d-none');
+                
+                // Re-enable the button
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Categorize';
+                }
             });
+        }
+        
+        // Function to update the UI with categorization results
+        function updateResultUI(result) {
+            currentAnalysis.classList.add('d-none');
+            lastResult.classList.remove('d-none');
+            
+            // Set result values
+            resultCategory.textContent = result.ai_category || 'Unknown';
+            
+            // Set priority badge color
+            resultPriority.textContent = result.ai_priority || 'Unknown';
+            if (result.ai_priority) {
+                if (result.ai_priority === 'critical') {
+                    resultPriority.className = 'badge bg-danger ms-2';
+                } else if (result.ai_priority === 'high') {
+                    resultPriority.className = 'badge bg-warning ms-2';
+                } else if (result.ai_priority === 'medium') {
+                    resultPriority.className = 'badge bg-primary ms-2';
+                } else if (result.ai_priority === 'low') {
+                    resultPriority.className = 'badge bg-success ms-2';
+                }
+            }
+            
+            resultSummary.textContent = result.ai_summary || 'No summary available';
+        }
+        
+        // Function to update a table row after categorization
+        function updateTableRow(alert) {
+            const row = document.getElementById(`alert-row-${alert.id}`);
+            if (!row) return;
+            
+            // Create priority badge with appropriate color
+            let priorityBadgeClass = 'bg-primary';
+            if (alert.ai_priority === 'critical') priorityBadgeClass = 'bg-danger';
+            else if (alert.ai_priority === 'high') priorityBadgeClass = 'bg-warning';
+            else if (alert.ai_priority === 'low') priorityBadgeClass = 'bg-success';
+            
+            row.innerHTML = `
+                <td>${alert.id}</td>
+                <td>${alert.title}</td>
+                <td>${alert.source_system}</td>
+                <td>
+                    <span class="badge ${priorityBadgeClass}">${alert.ai_priority || 'Unknown'}</span>
+                    <span class="badge bg-info ms-1">${alert.ai_category || 'Unknown'}</span>
+                </td>
+                <td>
+                    <span class="badge bg-success">Categorized</span>
+                </td>
+            `;
+            
+            // Add a highlight effect
+            row.classList.add('table-success');
+            setTimeout(() => {
+                row.classList.remove('table-success');
+            }, 3000);
+        }
+        
+        // Categorize All button handler
+        categorizeAllBtn.addEventListener('click', function() {
+            if (uncategorizedAlerts.length === 0) return;
+            
+            // Show progress UI
+            progressContainer.classList.remove('d-none');
+            progressBar.style.width = '0%';
+            progressText.textContent = `Processing 0/${uncategorizedAlerts.length} alerts`;
+            
+            // Disable all categorize buttons
+            document.querySelectorAll('.categorize-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+            categorizeAllBtn.disabled = true;
+            
+            // Process alerts one by one with visual feedback
+            processAlertsSequentially(0);
         });
         
-        function showResults() {
-            statusDiv.innerHTML = '<p>Processing complete</p>';
-            progressContainer.classList.add('d-none');
-            resultsContainer.classList.remove('d-none');
+        // Process alerts sequentially with visual feedback
+        function processAlertsSequentially(index) {
+            if (index >= uncategorizedAlerts.length) {
+                // All done
+                progressText.textContent = `Completed ${uncategorizedAlerts.length}/${uncategorizedAlerts.length} alerts`;
+                setTimeout(() => {
+                    // Reload the alerts to get the updated list
+                    fetchUncategorizedAlerts();
+                    progressContainer.classList.add('d-none');
+                    currentAnalysis.classList.add('d-none');
+                }, 2000);
+                return;
+            }
+            
+            const alert = uncategorizedAlerts[index];
+            
+            // Update progress
+            const progress = Math.round(((index) / uncategorizedAlerts.length) * 100);
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Processing ${index}/${uncategorizedAlerts.length} alerts`;
+            
+            // Show what's currently being analyzed
+            currentAnalysis.classList.remove('d-none');
+            lastResult.classList.add('d-none');
+            analyzingTitle.textContent = alert.title;
+            analyzingId.textContent = `Alert ID: ${alert.id}`;
+            
+            // Call the API
+            fetch(`/api/alerts/${alert.id}/categorize`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the table row
+                updateTableRow(data);
+                
+                // Update the last result UI
+                updateResultUI(data);
+                
+                // Process the next alert
+                setTimeout(() => {
+                    processAlertsSequentially(index + 1);
+                }, 500); // Add a slight delay for visual feedback
+            })
+            .catch(error => {
+                console.error(`Error categorizing alert ${alert.id}:`, error);
+                
+                // Continue with the next alert even if there's an error
+                setTimeout(() => {
+                    processAlertsSequentially(index + 1);
+                }, 500);
+            });
         }
     });
 </script>

@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.heroku import HerokuProvider
-from pydantic_ai.retry import ModelRetry
 
 from models.schemas import HealthAlertCategorization, HealthAlert
 
@@ -57,11 +56,7 @@ if model:
     health_agent = Agent(
         model,
         output_type=HealthAlertCategorization,
-        instructions=HEALTH_ANALYZER_INSTRUCTIONS,
-        retry=ModelRetry(
-            max_retries=2,
-            behaviors=["invalid_json", "invalid_field_value"]
-        )
+        instructions=HEALTH_ANALYZER_INSTRUCTIONS
     )
 
 def get_default_categorization(error_message: Optional[str] = None) -> HealthAlertCategorization:

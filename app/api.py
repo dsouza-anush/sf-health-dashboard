@@ -51,6 +51,11 @@ async def read_unresolved_alerts(db: Session = Depends(get_db)):
     """Get all unresolved health alerts."""
     return await health_service.get_unresolved_alerts(db)
 
+@router.get("/alerts/uncategorized/", response_model=List[HealthAlert])
+async def read_uncategorized_alerts(db: Session = Depends(get_db)):
+    """Get all health alerts that haven't been categorized by AI yet."""
+    return await health_service.get_uncategorized_alerts(db)
+
 @router.post("/alerts/{alert_id}/categorize", response_model=HealthAlert)
 async def categorize_alert(alert_id: int, db: Session = Depends(get_db)):
     """Categorize a specific health alert using AI."""

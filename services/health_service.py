@@ -60,6 +60,11 @@ async def get_unresolved_alerts(db: Session) -> List[SchemaHealthAlert]:
     alerts = db.query(DBHealthAlert).filter(DBHealthAlert.is_resolved == False).all()
     return [SchemaHealthAlert.model_validate(alert) for alert in alerts]
 
+async def get_uncategorized_alerts(db: Session) -> List[SchemaHealthAlert]:
+    """Get all health alerts that haven't been categorized by AI yet."""
+    alerts = db.query(DBHealthAlert).filter(DBHealthAlert.ai_category.is_(None)).all()
+    return [SchemaHealthAlert.model_validate(alert) for alert in alerts]
+
 async def mark_alert_resolved(db: Session, alert_id: int, resolved: bool = True) -> Optional[SchemaHealthAlert]:
     """Mark a health alert as resolved or unresolved."""
     db_alert = db.query(DBHealthAlert).filter(DBHealthAlert.id == alert_id).first()
