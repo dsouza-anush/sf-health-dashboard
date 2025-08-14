@@ -43,7 +43,7 @@
                 Alerts by Priority
             </div>
             <div class="card-body">
-                <div id="priority-chart" style="height: 300px;"></div>
+                <div id="priority-chart" style="height: 320px;"></div>
             </div>
         </div>
     </div>
@@ -53,7 +53,7 @@
                 Alerts by Source Category
             </div>
             <div class="card-body">
-                <div id="category-chart" style="height: 300px;"></div>
+                <div id="category-chart" style="height: 320px;"></div>
             </div>
         </div>
     </div>
@@ -135,27 +135,74 @@
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: {
-                color: '#e0e0e0'
+                color: '#e0e0e0',
+                family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                size: 12
             },
-            margin: { t: 0, b: 40, l: 40, r: 20 }
+            margin: { t: 10, b: 60, l: 60, r: 30 },
+            modebar: {
+                bgcolor: 'rgba(0,0,0,0)',
+                color: '#aaa',
+                activecolor: '#007aff'
+            },
+            hoverlabel: {
+                font: {
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                    size: 12
+                },
+                bordercolor: '#333'
+            }
         };
         
         // Priority chart data
+        const priorityValues = [
+            {{ stats.by_priority.critical }}, 
+            {{ stats.by_priority.high }}, 
+            {{ stats.by_priority.medium }}, 
+            {{ stats.by_priority.low }},
+            {{ stats.by_priority.uncategorized }}
+        ];
+
+        // Calculate percentages for better display
+        const priorityTotal = priorityValues.reduce((a, b) => a + b, 0);
+        const priorityPercentages = priorityValues.map(val => ((val / priorityTotal) * 100).toFixed(1) + '%');
+
         const priorityData = {
-            values: [
-                {{ stats.by_priority.critical }}, 
-                {{ stats.by_priority.high }}, 
-                {{ stats.by_priority.medium }}, 
-                {{ stats.by_priority.low }},
-                {{ stats.by_priority.uncategorized }}
-            ],
+            values: priorityValues,
             labels: ['Critical', 'High', 'Medium', 'Low', 'Uncategorized'],
             type: 'pie',
             marker: {
-                colors: ['#ff453a', '#ff9f0a', '#007aff', '#30d158', '#333']
+                colors: ['#ff453a', '#ff9f0a', '#007aff', '#30d158', '#333'],
+                line: {
+                    color: '#1e1e1e',
+                    width: 1
+                }
             },
-            textinfo: 'percent',
-            hole: 0.4
+            textinfo: 'label+percent',
+            textposition: 'outside',
+            hole: 0.4,
+            insidetextorientation: 'horizontal',
+            hovertemplate: '<b>%{label}</b><br>Alerts: %{value}<br>Percentage: %{percent}<extra></extra>',
+            textfont: {
+                size: 12,
+                color: '#e0e0e0',
+                family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+            },
+            outsidetextfont: {
+                size: 11,
+                color: '#e0e0e0',
+                family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+            },
+            hoverlabel: {
+                bgcolor: 'rgba(30,30,30,0.95)',
+                bordercolor: '#333',
+                font: {
+                    size: 12,
+                    color: '#fff',
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                }
+            },
+            pull: [0.05, 0.03, 0, 0, 0]
         };
 
         // Category chart data
@@ -170,29 +217,173 @@
                 {{ count }},
             {% endfor %}
         ];
+        
+        const categoryDisplayLabels = categoryLabels.map(label => {
+            // Capitalize and format the category names for better display
+            return label.charAt(0).toUpperCase() + label.slice(1).replace('_', ' ');
+        });
 
+        // Color palette for categories
+        const categoryColors = [
+            '#007aff',  // blue
+            '#ff9f0a',  // orange
+            '#ff453a',  // red
+            '#64d3ff',  // light blue
+            '#5e5ce6',  // indigo
+            '#30d158',  // green
+            '#bf5af2'   // purple
+        ];
+        
         const categoryData = {
             x: categoryLabels,
             y: categoryValues,
             type: 'bar',
+            text: categoryValues,
+            textposition: 'auto',
+            textfont: {
+                color: '#e0e0e0',
+                size: 11,
+                family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+            },
             marker: {
-                color: '#007aff'
+                color: categoryColors,
+                opacity: 0.9,
+                line: {
+                    width: 1,
+                    color: '#1e1e1e'
+                }
+            },
+            hovertemplate: '<b>%{x}</b><br>Alerts: %{y}<extra></extra>',
+            hoverlabel: {
+                bgcolor: 'rgba(30,30,30,0.95)',
+                bordercolor: '#333',
+                font: {
+                    size: 12,
+                    color: '#fff',
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                }
             }
         };
 
-        // Create the charts with dark mode settings
+        // Create the charts with enhanced settings
         const priorityLayout = {
             ...darkLayout,
-            legend: { orientation: 'h', y: -0.2 }
+            legend: {
+                orientation: 'h',
+                y: -0.2,
+                x: 0.5,
+                xanchor: 'center',
+                font: {
+                    size: 11,
+                    color: '#aaa',
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                },
+                bgcolor: 'rgba(0,0,0,0)',
+                bordercolor: 'rgba(0,0,0,0)'
+            },
+            annotations: [
+                {
+                    font: {
+                        size: 16,
+                        color: '#e0e0e0',
+                        family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                    },
+                    showarrow: false,
+                    text: 'Priority',
+                    x: 0.5,
+                    y: 0.5
+                },
+                {
+                    x: 1,
+                    y: 1.05,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'Last updated: Today',
+                    showarrow: false,
+                    font: {
+                        size: 9,
+                        color: '#aaa'
+                    },
+                    align: 'right'
+                }
+            ]
         };
         
         const categoryLayout = {
             ...darkLayout,
-            xaxis: { tickangle: -45 }
+            xaxis: {
+                tickangle: -45,
+                tickfont: {
+                    size: 10,
+                    family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                },
+                tickmode: 'array',
+                tickvals: categoryLabels,
+                ticktext: categoryDisplayLabels,
+                gridcolor: '#333',
+                gridwidth: 0.5,
+                zerolinecolor: '#444',
+                zerolinewidth: 1
+            },
+            yaxis: {
+                title: {
+                    text: 'Number of Alerts',
+                    font: {
+                        size: 12,
+                        color: '#aaa',
+                        family: 'Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif'
+                    },
+                    standoff: 10
+                },
+                gridcolor: 'rgba(51, 51, 51, 0.7)',
+                gridwidth: 0.5,
+                zerolinecolor: '#444',
+                zerolinewidth: 1,
+                fixedrange: false,
+                automargin: true
+            },
+            bargap: 0.3,
+            shapes: [{
+                type: 'line',
+                x0: -0.5,
+                y0: 0,
+                x1: categoryLabels.length - 0.5,
+                y1: 0,
+                line: {
+                    color: '#444',
+                    width: 1
+                }
+            }],
+            annotations: [{
+                x: 1,
+                y: 1.05,
+                xref: 'paper',
+                yref: 'paper',
+                text: 'Source: Salesforce Health Check',
+                showarrow: false,
+                font: {
+                    size: 9,
+                    color: '#aaa'
+                },
+                align: 'right'
+            }]
         };
 
-        Plotly.newPlot('priority-chart', [priorityData], priorityLayout);
-        Plotly.newPlot('category-chart', [categoryData], categoryLayout);
+        const config = {
+            responsive: true,
+            displayModeBar: 'hover',
+            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'toggleSpikelines', 'hoverClosestCartesian', 'hoverCompareCartesian'],
+            toImageButtonOptions: {
+                format: 'png',
+                filename: 'salesforce-health-check',
+                height: 500,
+                width: 700,
+                scale: 2
+            }
+        };
+
+        Plotly.newPlot('priority-chart', [priorityData], priorityLayout, config);
+        Plotly.newPlot('category-chart', [categoryData], categoryLayout, config);
     });
 </script>
 {% endblock %}
