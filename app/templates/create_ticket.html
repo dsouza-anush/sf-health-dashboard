@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Health Alert - Salesforce Health Check{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/alerts">Alerts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Create New Alert</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Create New Health Alert</h5>
+            </div>
+            <div class="card-body">
+                <form id="create-alert-form">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="" selected disabled>Select a category</option>
+                                <option value="optimizer">Optimizer</option>
+                                <option value="security">Security</option>
+                                <option value="limits">Limits</option>
+                                <option value="event">Event</option>
+                                <option value="stability">Stability</option>
+                                <option value="portal">Portal</option>
+                                <option value="exceptions">Exceptions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="source_system" class="form-label">Source System</label>
+                            <select class="form-select" id="source_system" name="source_system" required>
+                                <option value="" selected disabled>Select source system</option>
+                                <option value="Salesforce Optimizer">Salesforce Optimizer</option>
+                                <option value="Salesforce Security Health">Salesforce Security Health</option>
+                                <option value="Salesforce Limits Health">Salesforce Limits Health</option>
+                                <option value="Splunk Event Health">Splunk Event Health</option>
+                                <option value="ServiceNow">ServiceNow</option>
+                                <option value="Salesforce Portal Health">Salesforce Portal Health</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="raw_data" class="form-label">Raw Data (Optional)</label>
+                        <textarea class="form-control" id="raw_data" name="raw_data" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="window.location.href='/alerts'">Cancel</button>
+                        <button type="submit" id="create-btn" class="btn btn-primary">Create & Categorize</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">AI Categorization Demo</h5>
+            </div>
+            <div class="card-body">
+                <p>Click "Create & Categorize" to have the AI analyze your alert and provide:</p>
+                <ul>
+                    <li>The most appropriate category</li>
+                    <li>Priority level based on impact</li>
+                    <li>Concise summary of the issue</li>
+                    <li>Recommended actions</li>
+                </ul>
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    This demonstrates the pydantic-ai agent's ability to analyze and categorize health alerts in real-time.
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Analysis Results (initially hidden) -->
+        <div id="analysis-result" class="card d-none">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">AI Analysis Results</h5>
+            </div>
+            <div class="card-body">
+                <div id="analysis-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing with Claude AI...</p>
+                </div>
+                <div id="analysis-content" class="d-none">
+                    <div class="mb-3">
+                        <p>
+                            <strong>Category:</strong>
+                            <span id="ai-category" class="badge bg-info"></span>
+                        </p>
+                        <p>
+                            <strong>Priority:</strong>
+                            <span id="ai-priority" class="badge"></span>
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Summary</h6>
+                        <p id="ai-summary"></p>
+                    </div>
+                    
+                    <div>
+                        <h6>Recommendation</h6>
+                        <p id="ai-recommendation"></p>
+                    </div>
+                </div>
+                <div id="analysis-error" class="d-none">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span id="error-message">Failed to analyze alert. Please try again.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('create-alert-form');
+        const createBtn = document.getElementById('create-btn');
+        const analysisResult = document.getElementById('analysis-result');
+        const analysisLoading = document.getElementById('analysis-loading');
+        const analysisContent = document.getElementById('analysis-content');
+        const analysisError = document.getElementById('analysis-error');
+        
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            
+            // Show the analysis result card with loading state
+            analysisResult.classList.remove('d-none');
+            analysisLoading.classList.remove('d-none');
+            analysisContent.classList.add('d-none');
+            analysisError.classList.add('d-none');
+            
+            // Collect form data
+            const formData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                source_system: document.getElementById('source_system').value,
+                raw_data: document.getElementById('raw_data').value || null
+            };
+            
+            try {
+                // Create and categorize the alert
+                const response = await fetch('/api/alerts/create-and-categorize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || 'Failed to create alert');
+                }
+                
+                // Update UI with the result
+                document.getElementById('ai-category').textContent = result.ai_category || 'Not categorized';
+                
+                // Set priority badge color based on priority level
+                const priorityBadge = document.getElementById('ai-priority');
+                priorityBadge.textContent = result.ai_priority || 'Unknown';
+                if (result.ai_priority) {
+                    if (result.ai_priority === 'critical') {
+                        priorityBadge.className = 'badge bg-danger';
+                    } else if (result.ai_priority === 'high') {
+                        priorityBadge.className = 'badge bg-warning';
+                    } else if (result.ai_priority === 'medium') {
+                        priorityBadge.className = 'badge bg-primary';
+                    } else if (result.ai_priority === 'low') {
+                        priorityBadge.className = 'badge bg-success';
+                    }
+                }
+                
+                document.getElementById('ai-summary').textContent = result.ai_summary || 'No summary available';
+                document.getElementById('ai-recommendation').textContent = result.ai_recommendation || 'No recommendations available';
+                
+                // Hide loading, show content
+                analysisLoading.classList.add('d-none');
+                analysisContent.classList.remove('d-none');
+                
+                // Reset button state
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create & Categorize';
+                
+                // Optional: Scroll to results
+                analysisResult.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                // Show error message
+                analysisLoading.classList.add('d-none');
+                analysisError.classList.remove('d-none');
+                document.getElementById('error-message').textContent = error.message || 'Failed to analyze alert. Please try again.';
+                
+                // Reset button state
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create & Categorize';
+                
+                console.error('Error:', error);
+            }
+        });
+    });
+</script>
+{% endblock %}

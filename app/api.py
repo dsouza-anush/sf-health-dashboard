@@ -85,3 +85,14 @@ async def unresolve_alert(alert_id: int, db: Session = Depends(get_db)):
 async def get_dashboard_stats(db: Session = Depends(get_db)):
     """Get statistics for the dashboard."""
     return await health_service.get_dashboard_stats(db)
+
+@router.post("/alerts/create-and-categorize", response_model=HealthAlert)
+async def create_and_categorize_alert(alert: HealthAlertCreate, db: Session = Depends(get_db)):
+    """Create a new health alert and immediately categorize it with AI."""
+    # First create the alert in the database
+    new_alert = await health_service.create_alert(db, alert)
+    
+    # Then run AI categorization on it
+    categorized_alert = await health_service.categorize_alert(db, new_alert.id)
+    
+    return categorized_alert

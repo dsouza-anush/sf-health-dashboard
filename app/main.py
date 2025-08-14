@@ -77,6 +77,14 @@ async def categorize_all_page(request: Request):
         {"request": request}
     )
 
+@app.get("/create-ticket", response_class=HTMLResponse)
+async def create_ticket_page(request: Request):
+    """Render the create ticket page with AI categorization demo."""
+    return templates.TemplateResponse(
+        "create_ticket.html",
+        {"request": request}
+    )
+
 @app.get("/seed-database")
 async def seed_db():
     """Seed the database with sample data."""
