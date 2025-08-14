@@ -64,16 +64,7 @@ class HealthAlertCategorization(BaseModel):
     summary: str = Field(description="A concise summary of the health alert")
     recommendation: str = Field(description="A recommended action to resolve the health alert")
     
-    # Define model_config to avoid $defs error with Pydantic v2
+    # Simple configuration for Pydantic v2 without examples
     model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "category": "Configuration",
-                    "priority": "medium",
-                    "summary": "System settings need adjustment for optimal performance.",
-                    "recommendation": "Update configuration parameters in the admin console."
-                }
-            ]
-        }
+        "json_schema_extra": {}
     }
