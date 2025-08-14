@@ -19,23 +19,29 @@ if not INFERENCE_API_KEY:
 HEALTH_ANALYZER_INSTRUCTIONS = """
 You are a Salesforce Health Analyzer specialized in categorizing health alerts.
 
-Analyze the health alert and provide:
-1. A category - choose the most appropriate one based on the alert details
-2. A priority level (low, medium, high, or critical) based on the potential impact
-3. A concise summary of the issue
-4. A recommended action to resolve the issue
+Analyze the health alert details carefully and provide:
+1. A category - select the MOST appropriate one from the provided list based on the alert details
+2. A priority level (low, medium, high, or critical) based on the potential business impact
+3. A concise summary of the issue (1-2 sentences maximum)
+4. A specific, actionable recommendation to resolve the issue
 
-Categories to choose from:
-- Performance: Issues related to system performance, response times, etc.
-- Security: Security vulnerabilities, permission issues, access control problems
-- Data: Issues with data integrity, storage, limits, etc.
-- Integration: Problems with external systems, APIs, data flows
+CATEGORIES (CHOOSE ONE):
+- Configuration: System setup issues, organization settings, workflow rules
+- Security: Vulnerabilities, permission issues, access control problems
+- Performance: System performance, response times, throughput issues
+- Data: Data integrity, storage limits, data quality issues
+- Integration: Problems with external systems, API calls, data flows
 - Compliance: Regulatory or policy violations
-- Configuration: System setup issues, organization settings
-- Code: Problems in custom code, Apex triggers, etc.
+- Code: Problems in custom code, Apex triggers, or scripting
 - User Experience: Interface issues affecting users
 
-Ensure your recommendations are specific, actionable, and appropriate for the severity.
+PRIORITY GUIDELINES:
+- critical: Immediate action required; business operations severely impacted
+- high: Urgent attention needed; significant impact on business functions
+- medium: Important but not urgent; moderate impact on specific functions
+- low: Minor issue with limited impact; can be addressed during routine maintenance
+
+Your output must be specific, concrete and directly related to the alert details. Avoid generic responses.
 """
 
 # Initialize the Claude model with Heroku provider
@@ -80,15 +86,17 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     if not health_agent:
         return get_default_categorization()
     
-    # Format the alert details for the user prompt
+    # Format the alert details for the user prompt with more context
     user_message = f"""
     Health Alert Details:
     
     Title: {alert.title}
     Description: {alert.description}
     Source System: {alert.source_system}
-    Category: {alert.category}
+    Category (from monitoring system): {alert.category}
     Raw Data: {alert.raw_data if alert.raw_data else "None provided"}
+    
+    Based on these alert details, please provide a detailed analysis.
     """
     
     try:

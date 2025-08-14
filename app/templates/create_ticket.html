@@ -104,25 +104,25 @@
                     <p class="mt-2">Analyzing with Claude AI...</p>
                 </div>
                 <div id="analysis-content" class="d-none">
-                    <div class="mb-3">
-                        <p>
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        <div class="me-3">
                             <strong>Category:</strong>
-                            <span id="ai-category" class="badge bg-info"></span>
-                        </p>
-                        <p>
+                            <span id="ai-category" class="badge bg-info ms-1 fs-6"></span>
+                        </div>
+                        <div>
                             <strong>Priority:</strong>
-                            <span id="ai-priority" class="badge"></span>
-                        </p>
+                            <span id="ai-priority" class="badge ms-1 fs-6"></span>
+                        </div>
                     </div>
                     
                     <div class="mb-3">
-                        <h6>Summary</h6>
-                        <p id="ai-summary"></p>
+                        <h6 class="border-bottom pb-2 text-primary">Summary</h6>
+                        <p id="ai-summary" class="mt-2"></p>
                     </div>
                     
                     <div>
-                        <h6>Recommendation</h6>
-                        <p id="ai-recommendation"></p>
+                        <h6 class="border-bottom pb-2 text-primary">Recommendation</h6>
+                        <p id="ai-recommendation" class="mt-2"></p>
                     </div>
                 </div>
                 <div id="analysis-error" class="d-none">

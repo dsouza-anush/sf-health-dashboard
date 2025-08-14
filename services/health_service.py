@@ -88,8 +88,24 @@ async def categorize_alert(db: Session, alert_id: int) -> Optional[SchemaHealthA
     # Get AI categorization
     ai_result = await categorize_health_alert(alert_schema)
     
+    # Clean up and normalize results
+    category = ai_result.category.strip().lower()
+    # Map to one of our standard categories if needed
+    standard_categories = ["configuration", "security", "performance", "data", 
+                          "integration", "compliance", "code", "user experience"]
+    
+    # Find the closest matching category if needed
+    if category not in standard_categories:
+        for std_cat in standard_categories:
+            if std_cat in category:
+                category = std_cat
+                break
+        else:
+            # Default to configuration if no match found
+            category = "configuration" 
+    
     # Update the database record with AI results
-    db_alert.ai_category = ai_result.category
+    db_alert.ai_category = category
     db_alert.ai_priority = ai_result.priority
     db_alert.ai_summary = ai_result.summary
     db_alert.ai_recommendation = ai_result.recommendation
