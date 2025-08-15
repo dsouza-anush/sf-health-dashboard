@@ -28,7 +28,7 @@
                     <div class="col-md-6">
                         <p><strong>Source System:</strong> {{ alert.source_system }}</p>
                         <p><strong>Category:</strong> {{ alert.category }}</p>
-                        <p><strong>Created:</strong> {{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Created:</strong> {{ alert.created_at.strftime('%Y-%m-%d %H:%M') if alert.created_at else 'N/A' }}</p>
                     </div>
                     <div class="col-md-6">
                         <p>
@@ -118,7 +118,7 @@
                 </div>
                 
                 <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                    <span class="text-sm text-muted">Last analyzed: {{ alert.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span class="text-sm text-muted">Last analyzed: {{ alert.updated_at.strftime('%Y-%m-%d %H:%M') if alert.updated_at else 'N/A' }}</span>
                     <button id="recategorize-btn" class="btn btn-sm btn-outline">
                         <i class="bi bi-arrow-clockwise me-1"></i>
                         Recategorize with AI
