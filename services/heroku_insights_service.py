@@ -219,7 +219,7 @@ class HerokuInsightsService:
                     "name": "postgres_run_query",
                     "runtime_params": {
                         "target_app_name": self.app_name,
-                        "dyno_size": "basic",
+                        "dyno_size": "standard-1x",
                         "tool_params": {
                             "db_attachment": self.db_url
                         }
@@ -244,7 +244,13 @@ class HerokuInsightsService:
                     logger.error(f"Error from Heroku Agents API: {error_text}")
                     return self._get_fallback_insights()
                 
-                result = await response.json()
+                try:
+                    result = await response.json()
+                except Exception as e:
+                    # Handle non-JSON responses (e.g., text/event-stream)
+                    error_text = await response.text()
+                    logger.error(f"Failed to parse response as JSON: {str(e)}. Response: {error_text[:200]}...")
+                    return self._get_fallback_insights()
                 
                 # Extract the AI response
                 try:
