@@ -1,6 +1,9 @@
 // Main JavaScript for Salesforce Health Check Dashboard
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize collapsible AI insights and health summary
+    initCollapsibleComponents();
+    
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -171,6 +174,76 @@ document.addEventListener('DOMContentLoaded', function() {
         const options = { month: 'short', day: 'numeric' };
         return date.toLocaleDateString(undefined, options);
     };
+    
+    // Initialize collapsible components (AI Insights and Health Summary)
+    function initCollapsibleComponents() {
+        // Expand/collapse functionality for AI insights
+        document.querySelectorAll('.expand-insight').forEach(button => {
+            button.addEventListener('click', function() {
+                const insightId = this.getAttribute('data-insight');
+                const detailSection = document.getElementById(insightId);
+                const icon = this.querySelector('i');
+                
+                if (detailSection.style.display === 'none' || !detailSection.style.display) {
+                    // Expand the section
+                    detailSection.style.display = 'block';
+                    detailSection.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-up');
+                    
+                    // Animate the expansion
+                    setTimeout(() => {
+                        detailSection.style.transition = 'opacity 0.3s ease';
+                        detailSection.style.opacity = '1';
+                    }, 10);
+                } else {
+                    // Collapse the section with animation
+                    detailSection.style.transition = 'opacity 0.2s ease';
+                    detailSection.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-up');
+                    icon.classList.add('bi-chevron-down');
+                    
+                    setTimeout(() => {
+                        detailSection.style.display = 'none';
+                    }, 200);
+                }
+            });
+        });
+        
+        // Toggle health summary expand/collapse
+        const toggleHealthSummary = document.getElementById('toggle-health-summary');
+        const healthSummaryDetail = document.getElementById('health-summary-detail');
+        
+        if (toggleHealthSummary && healthSummaryDetail) {
+            toggleHealthSummary.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                
+                if (healthSummaryDetail.style.display === 'none' || !healthSummaryDetail.style.display) {
+                    // Expand health summary
+                    healthSummaryDetail.style.display = 'block';
+                    healthSummaryDetail.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-up');
+                    
+                    // Animate the expansion
+                    setTimeout(() => {
+                        healthSummaryDetail.style.transition = 'opacity 0.3s ease';
+                        healthSummaryDetail.style.opacity = '1';
+                    }, 10);
+                } else {
+                    // Collapse health summary with animation
+                    healthSummaryDetail.style.transition = 'opacity 0.2s ease';
+                    healthSummaryDetail.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-up');
+                    icon.classList.add('bi-chevron-down');
+                    
+                    setTimeout(() => {
+                        healthSummaryDetail.style.display = 'none';
+                    }, 200);
+                }
+            });
+        }
+    }
     
     // Initialize any category filter dropdowns
     const categoryFilters = document.querySelectorAll('.category-filter');

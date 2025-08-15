@@ -144,35 +144,81 @@
 
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi bi-stars me-2"></i>
-                <span>AI Insights</span>
+        <div class="card insight-container">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-stars me-2"></i>
+                    <span>AI Insights</span>
+                </div>
+                <div class="insight-badge">
+                    <span class="ai-badge">3</span>
+                </div>
             </div>
             <div class="card-body p-0">
-                <div class="p-4 insight-card">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Alert Pattern Detected</h6>
-                        <span class="ai-badge">AI Insight</span>
+                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="insight-indicator primary"></div>
+                        <div>
+                            <h6 class="mb-0 text-sm">Alert Pattern Detected</h6>
+                            <p class="text-xs mb-0 text-muted">Portal errors increased by 25%</p>
+                        </div>
                     </div>
-                    <p class="mb-3">Increase in Portal errors (25% this week) may be related to recent deployment.</p>
-                    <button class="btn btn-sm btn-outline">View Analysis</button>
+                    <button class="btn-icon expand-insight" data-insight="insight-1" aria-label="Expand insight">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
                 </div>
-                <div class="p-4 insight-card warning">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Potential Issue</h6>
-                        <span class="ai-badge">AI Insight</span>
+                <div id="insight-1" class="insight-detail" style="display: none;">
+                    <div class="p-4 pt-0">
+                        <p class="mb-3">Increase in Portal errors (25% this week) may be related to recent deployment.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="ai-badge">AI Insight</span>
+                            <button class="btn btn-sm btn-outline">View Analysis</button>
+                        </div>
                     </div>
-                    <p class="mb-3">Unusual increase in SOQL limit exceptions detected in last 24 hours.</p>
-                    <button class="btn btn-sm btn-outline">Investigate</button>
                 </div>
-                <div class="p-4 insight-card critical">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Suggested Action</h6>
-                        <span class="ai-badge">AI Recommendation</span>
+                
+                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="insight-indicator warning"></div>
+                        <div>
+                            <h6 class="mb-0 text-sm">Potential Issue</h6>
+                            <p class="text-xs mb-0 text-muted">Unusual SOQL limit exceptions</p>
+                        </div>
                     </div>
-                    <p class="mb-3">Consider adding cache layer to Customer Portal API to reduce load times.</p>
-                    <button class="btn btn-sm btn-outline">Create Task</button>
+                    <button class="btn-icon expand-insight" data-insight="insight-2" aria-label="Expand insight">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="insight-2" class="insight-detail" style="display: none;">
+                    <div class="p-4 pt-0">
+                        <p class="mb-3">Unusual increase in SOQL limit exceptions detected in last 24 hours.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="ai-badge">AI Insight</span>
+                            <button class="btn btn-sm btn-outline">Investigate</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="insight-indicator critical"></div>
+                        <div>
+                            <h6 class="mb-0 text-sm">Suggested Action</h6>
+                            <p class="text-xs mb-0 text-muted">Add cache layer to Customer Portal API</p>
+                        </div>
+                    </div>
+                    <button class="btn-icon expand-insight" data-insight="insight-3" aria-label="Expand insight">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="insight-3" class="insight-detail" style="display: none;">
+                    <div class="p-4 pt-0">
+                        <p class="mb-3">Consider adding cache layer to Customer Portal API to reduce load times.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="ai-badge">AI Recommendation</span>
+                            <button class="btn btn-sm btn-outline">Create Task</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -252,32 +298,77 @@
 
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi bi-lightning me-2"></i>
-                <span>AI Health Summary</span>
+        <div class="card health-summary-container">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-lightning me-2"></i>
+                    <span>AI Health Summary</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-xs text-muted">Last updated: {{ stats.last_updated }}</span>
+                    <button class="btn-icon" id="toggle-health-summary" aria-label="Toggle health summary">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="ai-badge me-2">AI Generated</div>
-                    <span class="text-sm text-muted">Last updated: {{ stats.last_updated }}</span>
+            <div class="card-body p-0">
+                <!-- Summary Preview - Always visible -->
+                <div class="health-summary-preview px-4 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="ai-badge">AI</div>
+                            <p class="mb-0">System health: <strong>moderate stability</strong> with <span class="text-warning">30 unresolved</span> alerts</p>
+                        </div>
+                        <div class="health-indicators d-flex align-items-center">
+                            <div class="health-indicator" title="Critical Issues">
+                                <i class="bi bi-exclamation-triangle text-danger"></i> 6
+                            </div>
+                            <div class="health-indicator" title="Trends">
+                                <i class="bi bi-graph-up text-warning"></i> 25%
+                            </div>
+                            <div class="health-indicator" title="Actions">
+                                <i class="bi bi-check-circle text-success"></i> 2
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <p class="mb-3">The system health shows <strong>moderate stability</strong> with 30 unresolved alerts. The primary concerns are high portal page load times and SOQL limit exceptions, which represent 36.4% of all alerts.</p>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <h6>Critical Issues</h6>
-                        <p class="text-sm">6 critical alerts require immediate attention, focused on <strong>Partner Portal performance</strong> and <strong>SOQL limit exceptions</strong>.</p>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <h6>Notable Trends</h6>
-                        <p class="text-sm">Observed 25% increase in portal alerts over the last 7 days, potentially related to recent deployment on 2025-08-10.</p>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <h6>Recommended Actions</h6>
-                        <p class="text-sm">Optimize Portal query performance and review SOQL queries in batch process components.</p>
+                
+                <!-- Detailed Health Summary - Expandable -->
+                <div id="health-summary-detail" style="display: none;" class="border-top">
+                    <div class="px-4 py-3">
+                        <p class="mb-3">The primary concerns are high portal page load times and SOQL limit exceptions, which represent 36.4% of all alerts.</p>
+                        
+                        <div class="health-details">
+                            <div class="health-detail-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                                    <h6 class="mb-0">Critical Issues</h6>
+                                </div>
+                                <p class="text-sm">6 critical alerts require immediate attention, focused on <strong>Partner Portal performance</strong> and <strong>SOQL limit exceptions</strong>.</p>
+                            </div>
+                            
+                            <div class="health-detail-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-graph-up text-warning me-2"></i>
+                                    <h6 class="mb-0">Notable Trends</h6>
+                                </div>
+                                <p class="text-sm">Observed 25% increase in portal alerts over the last 7 days, potentially related to recent deployment on 2025-08-10.</p>
+                            </div>
+                            
+                            <div class="health-detail-section">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <h6 class="mb-0">Recommended Actions</h6>
+                                </div>
+                                <p class="text-sm">Optimize Portal query performance and review SOQL queries in batch process components.</p>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-sm btn-outline mt-2">
+                            <i class="bi bi-file-text me-1"></i> Generate Full Health Report
+                        </button>
                     </div>
                 </div>
-                <button class="btn btn-sm btn-outline mt-2">Generate Full Health Report</button>
             </div>
         </div>
     </div>
