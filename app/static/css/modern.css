@@ -810,6 +810,42 @@ p {
   box-shadow: none;
 }
 
+/* AI Insights Modal */
+.modal-content {
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--neutral-700);
+  background-color: var(--neutral-800);
+  box-shadow: var(--shadow-dark-lg);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--neutral-700);
+  padding: var(--space-4) var(--space-6);
+}
+
+.modal-body {
+  padding: 0;
+}
+
+.dark-mode .modal-content {
+  background-color: var(--neutral-800);
+  border-color: var(--neutral-700);
+}
+
+.dark-mode .modal-header {
+  border-bottom-color: var(--neutral-700);
+}
+
+.ai-insights-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ai-insights-btn:hover {
+  transform: translateY(-1px);
+}
+
 /* Collapsible Insights */
 .insight-preview {
   cursor: pointer;

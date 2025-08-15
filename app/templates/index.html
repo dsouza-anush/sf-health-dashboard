@@ -147,19 +147,21 @@
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-12 mb-4">
-        <div class="card insight-container">
-            <div class="card-header d-flex justify-content-between align-items-center">
+<!-- AI Insights Modal -->
+<div class="modal fade" id="aiInsightsModal" tabindex="-1" aria-labelledby="aiInsightsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-stars me-2 icon-ai"></i>
-                    <span>AI Insights</span>
+                    <h5 class="modal-title" id="aiInsightsModalLabel">AI Insights</h5>
                 </div>
                 <div class="insight-badge">
                     <span class="ai-badge">3</span>
                 </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="card-body p-0">
+            <div class="modal-body p-0">
                 <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="insight-indicator primary"></div>
@@ -228,6 +230,9 @@
             </div>
         </div>
     </div>
+</div>
+
+<div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -235,9 +240,14 @@
                     <i class="bi bi-bell me-2"></i>
                     <span>Recent Alerts</span>
                 </div>
-                <a href="/alerts" class="btn btn-sm btn-primary">
-                    <i class="bi bi-arrow-right me-1"></i> View All
-                </a>
+                <div>
+                    <button class="btn btn-sm btn-primary me-2" id="showAiInsights">
+                        <i class="bi bi-stars me-1 icon-ai"></i> AI Insights
+                    </button>
+                    <a href="/alerts" class="btn btn-sm btn-primary">
+                        <i class="bi bi-arrow-right me-1"></i> View All
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -383,6 +393,16 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize AI Insights modal
+        const showAiInsightsBtn = document.getElementById('showAiInsights');
+        const aiInsightsModal = new bootstrap.Modal(document.getElementById('aiInsightsModal'));
+        
+        if (showAiInsightsBtn) {
+            showAiInsightsBtn.addEventListener('click', function() {
+                aiInsightsModal.show();
+            });
+        }
+        
         // Chart type toggle and time range controls
         const priorityChartToggle = document.getElementById('priority-chart-toggle');
         const categoryHistoryToggle = document.getElementById('category-chart-history-toggle');
