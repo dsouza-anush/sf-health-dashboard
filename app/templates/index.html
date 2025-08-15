@@ -59,6 +59,50 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Filter Alerts</span>
+                <button id="categorize-all-btn" class="btn btn-sm btn-primary">Categorize All</button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <select id="filter-by-category" class="form-select">
+                            <option value="">Filter by Category</option>
+                            <option value="configuration">Configuration</option>
+                            <option value="security">Security</option>
+                            <option value="performance">Performance</option>
+                            <option value="data">Data</option>
+                            <option value="integration">Integration</option>
+                            <option value="compliance">Compliance</option>
+                            <option value="code">Code</option>
+                            <option value="user experience">User Experience</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <select id="filter-by-priority" class="form-select">
+                            <option value="">Filter by Priority</option>
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <select id="filter-by-status" class="form-select">
+                            <option value="">Filter by Status</option>
+                            <option value="open">Open</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -130,6 +174,103 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Filter functionality for the alerts table
+        const categoryFilter = document.getElementById('filter-by-category');
+        const priorityFilter = document.getElementById('filter-by-priority');
+        const statusFilter = document.getElementById('filter-by-status');
+        const categorizeAllBtn = document.getElementById('categorize-all-btn');
+        
+        function applyFilters() {
+            const categoryValue = categoryFilter.value.toLowerCase();
+            const priorityValue = priorityFilter.value.toLowerCase();
+            const statusValue = statusFilter.value.toLowerCase();
+            
+            const rows = document.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                let showRow = true;
+                
+                // Check category filter
+                if (categoryValue && categoryValue !== '') {
+                    const cellCategory = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                    if (!cellCategory.includes(categoryValue)) {
+                        showRow = false;
+                    }
+                }
+                
+                // Check priority filter
+                if (priorityValue && priorityValue !== '') {
+                    const cellPriority = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
+                    if (!cellPriority.includes(priorityValue)) {
+                        showRow = false;
+                    }
+                }
+                
+                // Check status filter
+                if (statusValue && statusValue !== '') {
+                    const cellStatus = row.querySelector('td:nth-child(6)').textContent.toLowerCase();
+                    if (!cellStatus.includes(statusValue)) {
+                        showRow = false;
+                    }
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+                if (showRow) visibleCount++;
+            });
+            
+            // Show filter summary
+            updateFilterSummary(visibleCount, categoryValue, priorityValue, statusValue);
+        }
+        
+        function updateFilterSummary(count, category, priority, status) {
+            const tableContainer = document.querySelector('.table-responsive');
+            let summaryDiv = document.getElementById('filter-summary');
+            
+            if (!summaryDiv) {
+                summaryDiv = document.createElement('div');
+                summaryDiv.id = 'filter-summary';
+                summaryDiv.className = 'alert alert-info mt-2';
+                tableContainer.insertAdjacentElement('afterbegin', summaryDiv);
+            }
+            
+            if (category || priority || status) {
+                const filters = [];
+                if (category) filters.push(`Category: ${category}`);
+                if (priority) filters.push(`Priority: ${priority}`);
+                if (status) filters.push(`Status: ${status}`);
+                
+                summaryDiv.innerHTML = `
+                    Showing ${count} filtered results (${filters.join(', ')})
+                    <button id="clear-filters" class="btn btn-sm btn-outline-secondary ms-2">Clear Filters</button>
+                `;
+                summaryDiv.style.display = 'block';
+                
+                document.getElementById('clear-filters').addEventListener('click', clearFilters);
+            } else {
+                summaryDiv.style.display = 'none';
+            }
+        }
+        
+        function clearFilters() {
+            categoryFilter.value = '';
+            priorityFilter.value = '';
+            statusFilter.value = '';
+            applyFilters();
+        }
+        
+        // Apply filters when any filter dropdown changes
+        categoryFilter.addEventListener('change', applyFilters);
+        priorityFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        
+        // Handle categorize all button
+        if (categorizeAllBtn) {
+            categorizeAllBtn.addEventListener('click', function() {
+                window.location.href = '/categorize-all';
+            });
+        }
+        
         // Dark mode template for Plotly
         const darkLayout = {
             paper_bgcolor: 'rgba(0,0,0,0)',

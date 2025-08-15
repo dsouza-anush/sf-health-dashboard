@@ -14,7 +14,10 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Filter Alerts</span>
-                <a href="/categorize-all" class="btn btn-sm btn-primary">Categorize All</a>
+                <div>
+                    <button id="apply-filters" class="btn btn-sm btn-primary me-2">Apply Filters</button>
+                    <a href="/categorize-all" class="btn btn-sm btn-primary">Categorize All</a>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -59,6 +62,7 @@
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover" id="alerts-table">
+                        <caption id="filter-results" class="p-0"></caption>
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -145,6 +149,7 @@
         const categoryFilter = document.getElementById('category-filter');
         const priorityFilter = document.getElementById('priority-filter');
         const statusFilter = document.getElementById('status-filter');
+        const applyFiltersBtn = document.getElementById('apply-filters');
         const alertRows = document.querySelectorAll('.alert-row');
         
         function applyFilters() {
@@ -152,6 +157,7 @@
             const priorityValue = priorityFilter.value;
             const statusValue = statusFilter.value;
             
+            let matchCount = 0;
             alertRows.forEach(row => {
                 const category = row.getAttribute('data-category');
                 const priority = row.getAttribute('data-priority');
@@ -176,12 +182,54 @@
                 }
                 
                 row.style.display = showRow ? '' : 'none';
+                if (showRow) matchCount++;
             });
+
+            // Update the table caption with filter results
+            const tableCaption = document.querySelector('#alerts-table caption');
+            if (!tableCaption) {
+                const caption = document.createElement('caption');
+                caption.id = 'filter-results';
+                document.querySelector('#alerts-table').appendChild(caption);
+            }
+            const filterInfo = document.querySelector('#filter-results');
+            if (filterInfo) {
+                if (categoryValue || priorityValue || statusValue) {
+                    const filters = [];
+                    if (categoryValue) filters.push(`Category: ${categoryValue}`);
+                    if (priorityValue) filters.push(`Priority: ${priorityValue}`);
+                    if (statusValue) filters.push(`Status: ${statusValue === 'true' ? 'Resolved' : 'Open'}`);
+                    
+                    filterInfo.innerHTML = `<div class="alert alert-info mb-0 mt-2">
+                        Showing ${matchCount} filtered results (${filters.join(', ')})
+                        <button id="clear-filters" class="btn btn-sm btn-outline-secondary ms-2">Clear Filters</button>
+                    </div>`;
+                    
+                    document.getElementById('clear-filters').addEventListener('click', clearFilters);
+                } else {
+                    filterInfo.innerHTML = '';
+                }
+            }
         }
         
-        categoryFilter.addEventListener('change', applyFilters);
-        priorityFilter.addEventListener('change', applyFilters);
-        statusFilter.addEventListener('change', applyFilters);
+        function clearFilters() {
+            categoryFilter.value = '';
+            priorityFilter.value = '';
+            statusFilter.value = '';
+            applyFilters();
+        }
+        
+        // Only apply filters when the button is clicked or when pressing Enter in filter fields
+        applyFiltersBtn.addEventListener('click', applyFilters);
+        
+        // Also apply filters on Enter key in any filter field
+        [categoryFilter, priorityFilter, statusFilter].forEach(filter => {
+            filter.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+        });
         
         // Categorize button
         document.querySelectorAll('.categorize-btn').forEach(btn => {
