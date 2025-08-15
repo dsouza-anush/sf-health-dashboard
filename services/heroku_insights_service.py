@@ -173,9 +173,12 @@ class HerokuInsightsService:
                             # Read the entire response content
                             content = await response.read()
                             content_str = content.decode('utf-8')
+                            logger.info(f"Raw SSE response length: {len(content_str)} bytes")
+                            logger.debug(f"Raw SSE response: {content_str[:500]}...")
                             
                             # Split into events based on double newlines
                             events = content_str.strip().split('\n\n')
+                            logger.info(f"Found {len(events)} events after splitting")
                             
                             for event_block in events:
                                 if not event_block.strip():
@@ -196,14 +199,21 @@ class HerokuInsightsService:
                                 if event_type == "message" and event_data:
                                     try:
                                         data = json.loads(event_data)
+                                        logger.debug(f"Parsed event data: {json.dumps(data)[:200]}...")
+                                        
+                                        # Log all message events with object type and choices
+                                        object_type = data.get("object")
+                                        has_choices = bool(data.get("choices"))
+                                        logger.info(f"Message event: object_type={object_type}, has_choices={has_choices}")
                                         
                                         # Look for chat completion with stop reason
-                                        if (data.get("object") == "chat.completion" and 
-                                            data.get("choices")):
-                                            
+                                        if object_type == "chat.completion" and has_choices:
                                             for choice in data["choices"]:
-                                                if (choice.get("finish_reason") == "stop" and 
-                                                    choice.get("message", {}).get("content")):
+                                                finish_reason = choice.get("finish_reason")
+                                                has_content = bool(choice.get("message", {}).get("content"))
+                                                logger.info(f"Choice: finish_reason={finish_reason}, has_content={has_content}")
+                                                
+                                                if finish_reason == "stop" and has_content:
                                                     final_message = choice["message"]["content"]
                                                     logger.info(f"Found final completion message: {len(final_message)} chars")
                                                     break
@@ -220,7 +230,8 @@ class HerokuInsightsService:
                             # Use the final completion message as our AI text
                             if final_message:
                                 last_ai_text = final_message
-                                logger.info("Successfully extracted AI response from SSE stream")
+                                logger.info(f"Successfully extracted AI response from SSE stream: {len(last_ai_text)} chars")
+                                logger.debug(f"AI response content: {last_ai_text[:200]}...")
                             else:
                                 logger.warning("Processed entire SSE stream but didn't find a final completion message")
                                 
