@@ -28,9 +28,9 @@ class HerokuInsightsService:
         self.app_name = os.getenv("APP_NAME") or os.getenv("HEROKU_APP_NAME")
         
         # Get database URL from environment - Heroku Agents API requires a follower database
-        # Try to use the newly created follower database (COBALT)
-        self.db_url = os.getenv("HEROKU_POSTGRESQL_COBALT_URL") or os.getenv("DATABASE_URL")
-        self.is_follower_db = self.db_url == os.getenv("HEROKU_POSTGRESQL_COBALT_URL")
+        # Use our follower database (COBALT) that follows the primary database
+        self.db_url = os.getenv("HEROKU_POSTGRESQL_COBALT_URL")
+        self.is_follower_db = True  # COBALT is a follower database
         
         # Check for required configuration
         if not self.api_key:
