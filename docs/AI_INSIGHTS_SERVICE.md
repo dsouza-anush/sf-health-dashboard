@@ -22,12 +22,37 @@ The service requires a specific database configuration:
 - **Primary Database**: Used for all normal application functions (AMBER)
 - **Follower Database**: Required by Heroku Agents API for analytics (COBALT)
   
-The Heroku Agents API specifically requires a follower database for security and performance reasons. If the follower database is missing or improperly configured, the service will fall back to a default message.
+### Why Follower Databases are Required
+
+The Heroku Agents API **strictly requires** a follower database for several critical reasons:
+
+1. **Security**: Follower databases are read-only, preventing any accidental writes from LLM-generated SQL
+2. **Performance**: Separates analytical queries from transactional workloads
+3. **Data Consistency**: Ensures the AI is working with a consistent view of the data
+4. **Resource Isolation**: Prevents LLM-generated queries from impacting application performance
+
+Without a properly configured follower database, the Heroku Agents API will explicitly reject queries with the error `"Target database is not a replica"`. If the follower database is missing or improperly configured, the service will fall back to a default message.
 
 ### Current Configuration
 
 - Primary DB: `HEROKU_POSTGRESQL_AMBER` (standard-0)
 - Follower DB: `HEROKU_POSTGRESQL_COBALT` (standard-0, follows AMBER)
+
+### Creating a Follower Database
+
+If the follower database needs to be recreated, use this command:
+
+```bash
+heroku addons:create heroku-postgresql:standard-0 --app sf-health-dashboard -- --follow DATABASE_URL
+```
+
+After creation, you need to set it as the COBALT database:
+
+```bash
+heroku pg:promote HEROKU_POSTGRESQL_COLOR_URL --as HEROKU_POSTGRESQL_COBALT -a sf-health-dashboard
+```
+
+Replace `COLOR_URL` with the actual color assigned by Heroku (like PURPLE, CYAN, etc.)
 
 ## API Usage
 
@@ -71,12 +96,36 @@ When the AI service encounters an error, it returns a fallback response with `"i
 
 ### Heroku Agents API
 
-The service uses the Heroku Agents API with Claude to analyze the database:
+The service uses the Heroku Agents API with Claude to analyze the database. This API allows Claude to execute SQL queries against the database to generate insights.
+
+#### Configuration
 
 - **Model**: claude-4-sonnet
 - **Tool**: postgres_run_query (allows Claude to query the database)
 - **Response Format**: Server-Sent Events (SSE)
 - **Timeout**: 120 seconds
+- **Dyno Size**: standard-1x (for query execution)
+
+#### Key Limitations
+
+1. **Maximum Tool Calls**: The API limits Claude to 3 tool calls per request. If Claude tries to run more than 3 queries, the request will fail with `"tool exceeded maximum calls (3)"`. This means Claude must get all necessary insights within those 3 queries.
+
+2. **Follower Database Only**: The API will only execute queries against follower databases. Attempts to use primary databases will fail.
+
+3. **Timeout Constraints**: Complex queries might exceed the timeout, especially with large datasets.
+
+#### How it Works
+
+When the user requests insights:
+
+1. The app sends a request to the Heroku Agents API with the prompt and tool configuration
+2. Claude analyzes the prompt and decides which queries to run
+3. Claude executes SQL queries (up to 3) against the follower database
+4. Claude analyzes the data returned from these queries
+5. Claude generates insights based on the data and returns them as JSON
+6. The app processes this response and displays it to the user
+
+The Heroku Agents API handles running the queries in a secure sandbox environment.
 
 ### SSE Response Handling
 
