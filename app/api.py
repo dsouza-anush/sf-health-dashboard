@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database.db import get_db
-from models.schemas import HealthAlert, HealthAlertCreate, HealthAlertUpdate
+from models.schemas import HealthAlert, HealthAlertCreate, HealthAlertUpdate, AIInsights, InsightRequest
 from services import health_service
 from services.jira_integration import create_jira_ticket_for_alert
+from services.heroku_insights_service import heroku_insights_service
 
 router = APIRouter()
 
@@ -100,6 +101,24 @@ async def unresolve_alert(alert_id: int, db: Session = Depends(get_db)):
 async def get_dashboard_stats(db: Session = Depends(get_db)):
     """Get statistics for the dashboard."""
     return await health_service.get_dashboard_stats(db)
+
+@router.get("/insights/", response_model=AIInsights)
+async def get_ai_insights(time_range: str = "week"):
+    """Get AI-generated insights on health alerts."""
+    try:
+        insights = await heroku_insights_service.get_ai_insights(time_range)
+        return insights
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
+
+@router.post("/insights/", response_model=AIInsights)
+async def request_ai_insights(request: InsightRequest):
+    """Request AI-generated insights on health alerts with specific parameters."""
+    try:
+        insights = await heroku_insights_service.get_ai_insights(request.time_range.value)
+        return insights
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating insights: {str(e)}")
 
 @router.post("/alerts/create-and-categorize", response_model=HealthAlert)
 async def create_and_categorize_alert(alert: HealthAlertCreate, db: Session = Depends(get_db)):

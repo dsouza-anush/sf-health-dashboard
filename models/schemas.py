@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 class PriorityLevel(str, Enum):
@@ -63,3 +63,34 @@ class HealthAlertCategorization(BaseModel):
     priority: str
     summary: str
     recommendation: str
+
+# AI Insights Models
+class InsightSeverity(str, Enum):
+    PRIMARY = "primary"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+class InsightTimeRange(str, Enum):
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
+    QUARTER = "quarter"
+
+class InsightDetail(BaseModel):
+    """Model for a single AI insight detail"""
+    title: str
+    description: str
+
+class AIInsights(BaseModel):
+    """Model for AI-generated insights"""
+    alert_pattern: InsightDetail
+    potential_issue: InsightDetail
+    suggested_action: InsightDetail
+    system_health_summary: str
+    generated_at: datetime
+    time_range: InsightTimeRange
+    is_fallback: bool = False
+
+class InsightRequest(BaseModel):
+    """Model for requesting insights"""
+    time_range: InsightTimeRange = InsightTimeRange.WEEK

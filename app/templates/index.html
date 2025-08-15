@@ -161,69 +161,104 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0">
-                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="insight-indicator primary"></div>
-                        <div>
-                            <h6 class="mb-0 text-sm">Alert Pattern Detected</h6>
-                            <p class="text-xs mb-0 text-muted">Portal errors increased by 25%</p>
-                        </div>
+            <div class="modal-body p-0" id="aiInsightsModalBody">
+                <!-- Loading state -->
+                <div id="aiInsightsLoading" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <button class="btn-icon expand-insight" data-insight="insight-1" aria-label="Expand insight">
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
-                </div>
-                <div id="insight-1" class="insight-detail" style="display: none;">
-                    <div class="p-4 pt-0">
-                        <p class="mb-3">Increase in Portal errors (25% this week) may be related to recent deployment.</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Insight</span>
-                            <button class="btn btn-sm btn-outline">View Analysis</button>
-                        </div>
-                    </div>
+                    <p class="mt-3">Generating AI insights...</p>
                 </div>
                 
-                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="insight-indicator warning"></div>
-                        <div>
-                            <h6 class="mb-0 text-sm">Potential Issue</h6>
-                            <p class="text-xs mb-0 text-muted">Unusual SOQL limit exceptions</p>
-                        </div>
+                <!-- Error state -->
+                <div id="aiInsightsError" class="text-center p-5" style="display: none;">
+                    <div class="text-danger">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
                     </div>
-                    <button class="btn-icon expand-insight" data-insight="insight-2" aria-label="Expand insight">
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
-                </div>
-                <div id="insight-2" class="insight-detail" style="display: none;">
-                    <div class="p-4 pt-0">
-                        <p class="mb-3">Unusual increase in SOQL limit exceptions detected in last 24 hours.</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Insight</span>
-                            <button class="btn btn-sm btn-outline">Investigate</button>
-                        </div>
-                    </div>
+                    <p class="mt-3">Failed to load AI insights. Please try again.</p>
+                    <button id="retryInsights" class="btn btn-sm btn-primary mt-2">Retry</button>
                 </div>
                 
-                <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="insight-indicator critical"></div>
-                        <div>
-                            <h6 class="mb-0 text-sm">Suggested Action</h6>
-                            <p class="text-xs mb-0 text-muted">Add cache layer to Customer Portal API</p>
+                <!-- Insights container -->
+                <div id="aiInsightsContent" style="display: none;">
+                    <!-- Alert Pattern -->
+                    <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="insight-indicator primary"></div>
+                            <div>
+                                <h6 class="mb-0 text-sm" id="pattern-title">Alert Pattern Detected</h6>
+                                <p class="text-xs mb-0 text-muted" id="pattern-desc-short">Loading...</p>
+                            </div>
+                        </div>
+                        <button class="btn-icon expand-insight" data-insight="insight-1" aria-label="Expand insight">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="insight-1" class="insight-detail" style="display: none;">
+                        <div class="p-4 pt-0">
+                            <p class="mb-3" id="pattern-desc-full">Loading full description...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Insight</span>
+                                <button class="btn btn-sm btn-outline">View Analysis</button>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-icon expand-insight" data-insight="insight-3" aria-label="Expand insight">
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
-                </div>
-                <div id="insight-3" class="insight-detail" style="display: none;">
-                    <div class="p-4 pt-0">
-                        <p class="mb-3">Consider adding cache layer to Customer Portal API to reduce load times.</p>
+                    
+                    <!-- Potential Issue -->
+                    <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="insight-indicator warning"></div>
+                            <div>
+                                <h6 class="mb-0 text-sm" id="issue-title">Potential Issue</h6>
+                                <p class="text-xs mb-0 text-muted" id="issue-desc-short">Loading...</p>
+                            </div>
+                        </div>
+                        <button class="btn-icon expand-insight" data-insight="insight-2" aria-label="Expand insight">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="insight-2" class="insight-detail" style="display: none;">
+                        <div class="p-4 pt-0">
+                            <p class="mb-3" id="issue-desc-full">Loading full description...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Insight</span>
+                                <button class="btn btn-sm btn-outline">Investigate</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Suggested Action -->
+                    <div class="insight-preview d-flex align-items-center justify-content-between px-4 py-3 border-top">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="insight-indicator critical"></div>
+                            <div>
+                                <h6 class="mb-0 text-sm" id="action-title">Suggested Action</h6>
+                                <p class="text-xs mb-0 text-muted" id="action-desc-short">Loading...</p>
+                            </div>
+                        </div>
+                        <button class="btn-icon expand-insight" data-insight="insight-3" aria-label="Expand insight">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="insight-3" class="insight-detail" style="display: none;">
+                        <div class="p-4 pt-0">
+                            <p class="mb-3" id="action-desc-full">Loading full description...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Recommendation</span>
+                                <button class="btn btn-sm btn-outline">Create Task</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary footer -->
+                    <div class="insight-footer p-3 border-top">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="ai-badge"><i class="bi bi-stars me-1 icon-ai"></i> AI Recommendation</span>
-                            <button class="btn btn-sm btn-outline">Create Task</button>
+                            <div>
+                                <small class="text-muted">Generated <span id="insights-generated-time">just now</span></small>
+                            </div>
+                            <div>
+                                <span id="system-health-summary" class="badge bg-info">Generating health summary...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -396,11 +431,121 @@
         // Initialize AI Insights modal
         const showAiInsightsBtn = document.getElementById('showAiInsights');
         const aiInsightsModal = new bootstrap.Modal(document.getElementById('aiInsightsModal'));
+        let insightsLoaded = false;
         
         if (showAiInsightsBtn) {
             showAiInsightsBtn.addEventListener('click', function() {
                 aiInsightsModal.show();
+                
+                // Load insights if not already loaded
+                if (!insightsLoaded) {
+                    loadAIInsights();
+                }
             });
+        }
+        
+        // Retry button handler
+        const retryBtn = document.getElementById('retryInsights');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', loadAIInsights);
+        }
+        
+        // Function to load AI insights via API
+        function loadAIInsights() {
+            // Show loading state
+            document.getElementById('aiInsightsLoading').style.display = 'block';
+            document.getElementById('aiInsightsError').style.display = 'none';
+            document.getElementById('aiInsightsContent').style.display = 'none';
+            
+            // Get the selected time range from the dashboard
+            const timeRange = document.getElementById('time-range-selector').value || 'week';
+            
+            // Call the insights API
+            fetch(`/api/insights/?time_range=${timeRange}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide loading, show content
+                    document.getElementById('aiInsightsLoading').style.display = 'none';
+                    document.getElementById('aiInsightsContent').style.display = 'block';
+                    
+                    // Check if we got fallback data
+                    if (data.is_fallback) {
+                        // Show fallback notification
+                        showToast('Using cached insights. Real-time analysis unavailable.', 'warning');
+                    }
+                    
+                    // Update alert pattern
+                    document.getElementById('pattern-title').textContent = data.alert_pattern.title;
+                    document.getElementById('pattern-desc-short').textContent = truncateText(data.alert_pattern.description, 60);
+                    document.getElementById('pattern-desc-full').textContent = data.alert_pattern.description;
+                    
+                    // Update potential issue
+                    document.getElementById('issue-title').textContent = data.potential_issue.title;
+                    document.getElementById('issue-desc-short').textContent = truncateText(data.potential_issue.description, 60);
+                    document.getElementById('issue-desc-full').textContent = data.potential_issue.description;
+                    
+                    // Update suggested action
+                    document.getElementById('action-title').textContent = data.suggested_action.title;
+                    document.getElementById('action-desc-short').textContent = truncateText(data.suggested_action.description, 60);
+                    document.getElementById('action-desc-full').textContent = data.suggested_action.description;
+                    
+                    // Update system health summary
+                    const healthSummary = document.getElementById('system-health-summary');
+                    healthSummary.textContent = data.system_health_summary;
+                    
+                    // Set appropriate color class based on health summary text
+                    healthSummary.className = 'badge';
+                    if (data.system_health_summary.toLowerCase().includes('critical') || 
+                        data.system_health_summary.toLowerCase().includes('severe')) {
+                        healthSummary.classList.add('bg-danger');
+                    } else if (data.system_health_summary.toLowerCase().includes('concern') || 
+                              data.system_health_summary.toLowerCase().includes('attention') || 
+                              data.system_health_summary.toLowerCase().includes('moderate')) {
+                        healthSummary.classList.add('bg-warning');
+                    } else if (data.system_health_summary.toLowerCase().includes('good') || 
+                              data.system_health_summary.toLowerCase().includes('stable')) {
+                        healthSummary.classList.add('bg-success');
+                    } else {
+                        healthSummary.classList.add('bg-info');
+                    }
+                    
+                    // Format generated time
+                    const generatedAt = new Date(data.generated_at);
+                    const now = new Date();
+                    const diffMinutes = Math.floor((now - generatedAt) / (1000 * 60));
+                    
+                    let timeDisplay;
+                    if (diffMinutes < 1) {
+                        timeDisplay = 'just now';
+                    } else if (diffMinutes < 60) {
+                        timeDisplay = `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+                    } else {
+                        const diffHours = Math.floor(diffMinutes / 60);
+                        timeDisplay = `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+                    }
+                    
+                    document.getElementById('insights-generated-time').textContent = timeDisplay;
+                    
+                    // Mark as loaded
+                    insightsLoaded = true;
+                })
+                .catch(error => {
+                    console.error('Error fetching insights:', error);
+                    document.getElementById('aiInsightsLoading').style.display = 'none';
+                    document.getElementById('aiInsightsError').style.display = 'block';
+                    insightsLoaded = false;
+                });
+        }
+        
+        // Helper function to truncate text
+        function truncateText(text, maxLength) {
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
         }
         
         // Chart type toggle and time range controls
