@@ -18,6 +18,7 @@ from database.db import get_db, engine
 from database.models import Base
 from database import seed
 from app.api import router as api_router
+from app.slack_events import router as slack_router
 from services import health_service
 
 # Load environment variables
@@ -62,6 +63,9 @@ app.add_middleware(
 
 # Include API router
 app.include_router(api_router, prefix="/api")
+
+# Include Slack events router
+app.include_router(slack_router)
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):

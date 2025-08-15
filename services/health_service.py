@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from database.models import HealthAlert as DBHealthAlert, HealthCategory
-from models.schemas import HealthAlertCreate, HealthAlertUpdate, HealthAlert as SchemaHealthAlert
+from models.schemas import HealthAlertCreate, HealthAlertUpdate, HealthAlert as SchemaHealthAlert, PriorityLevel
 from services.ai_service import categorize_health_alert
+from services.slack_service import send_alert_notification
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -129,7 +130,22 @@ async def categorize_alert(db: Session, alert_id: int) -> Optional[SchemaHealthA
         db.refresh(db_alert)
         
         logger.info(f"Alert {alert_id} categorized as {category} with {ai_result.priority} priority")
-        return SchemaHealthAlert.model_validate(db_alert)
+        
+        # Check if we need to send a Slack notification for high/critical alerts
+        alert_schema = SchemaHealthAlert.model_validate(db_alert)
+        if ai_result.priority in ["high", "critical"]:
+            try:
+                slack_sent = await send_alert_notification(alert_schema)
+                if slack_sent:
+                    # Update the alert to mark that Slack notification was sent
+                    db_alert.slack_alert_sent = True
+                    db.commit()
+                    logger.info(f"Sent Slack notification for alert {alert_id}")
+            except Exception as e:
+                logger.error(f"Error sending Slack notification for alert {alert_id}: {str(e)}")
+                # Don't raise the exception - we don't want to fail the whole operation if Slack fails
+        
+        return alert_schema
     except Exception as e:
         logger.error(f"Error categorizing alert {alert_id}: {str(e)}")
         db.rollback()  # Roll back transaction on error
@@ -163,6 +179,20 @@ async def categorize_all_uncategorized(db: Session) -> int:
                 # Commit each update individually to avoid losing all work if one fails
                 db.commit()
                 logger.info(f"Categorized alert {alert.id}: {alert.title}")
+                
+                # Send Slack notification for high/critical priority alerts
+                if ai_result.priority in ["high", "critical"]:
+                    try:
+                        alert_schema = SchemaHealthAlert.model_validate(alert)
+                        slack_sent = await send_alert_notification(alert_schema)
+                        if slack_sent:
+                            # Update the alert to mark that Slack notification was sent
+                            alert.slack_alert_sent = True
+                            db.commit()
+                            logger.info(f"Sent Slack notification for alert {alert.id}")
+                    except Exception as e:
+                        logger.error(f"Error sending Slack notification for alert {alert.id}: {str(e)}")
+                        # Continue processing other alerts
                 
             except Exception as e:
                 # Log error but continue processing other alerts
