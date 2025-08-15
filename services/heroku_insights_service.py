@@ -3,18 +3,21 @@ import json
 import logging
 import traceback
 import aiohttp
-import asyncio
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Dict, Any, Optional
 
-# Set up logger
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Cache for storing insights to avoid repeated API calls
-insights_cache = {}
-CACHE_TTL_SECONDS = 900  # 15 minutes
-
 class HerokuInsightsService:
+    """
+    Service for generating AI insights on health alerts using the Heroku Agents API.
+    
+    This service connects to the Heroku Agents API to analyze health alerts
+    and provide AI-generated insights.
+    """
+    
     def __init__(self):
         # Get API key from environment - check all possible variable names
         self.api_key = os.getenv("HEROKU_INFERENCE_API_KEY") or os.getenv("INFERENCE_API_KEY") or os.getenv("INFERENCE_KEY")
@@ -44,53 +47,10 @@ class HerokuInsightsService:
         
         # Log database information
         logger.info(f"Using follower database '{self.db_attachment}' for AI insights")
-            
-        logger.info(f"Initialized Heroku Insights Service with model: {self.model_id}")
-
-    async def get_ai_insights(self, time_range: str = "week") -> Dict[str, Any]:
+    
+    async def get_ai_insights(self, time_range: str) -> Dict[str, Any]:
         """
-        Get AI-generated insights on health alerts using Heroku Agents API.
-        
-        Args:
-            time_range: Time period to analyze ("day", "week", "month")
-            
-        Returns:
-            Dict containing AI insights
-        """
-        cache_key = f"insights:{time_range}"
-        
-        # Check if we have cached insights
-        if cache_key in insights_cache:
-            cached_data, timestamp = insights_cache[cache_key]
-            # If cache is still valid (within TTL)
-            if datetime.now() - timestamp < timedelta(seconds=CACHE_TTL_SECONDS):
-                logger.info(f"Using cached insights for {time_range}")
-                return cached_data
-        
-        logger.info(f"Generating new AI insights for time range: {time_range}")
-        
-        try:
-            # Ensure we have all required configuration
-            if not all([self.api_key, self.app_name]):
-                logger.error("Missing required configuration for AI insights")
-                return self._get_fallback_insights()
-            
-            # Generate insights using Heroku Agents API
-            insights = await self._query_heroku_agent(time_range)
-            
-            # Cache the results
-            insights_cache[cache_key] = (insights, datetime.now())
-            
-            return insights
-            
-        except Exception as e:
-            logger.error(f"Error generating AI insights: {str(e)}")
-            logger.debug(traceback.format_exc())
-            return self._get_fallback_insights()
-
-    async def _query_heroku_agent(self, time_range: str) -> Dict[str, Any]:
-        """
-        Query the Heroku Agents API with postgres tool to analyze database.
+        Get AI-generated insights on health alerts for the specified time range.
         
         Args:
             time_range: Time period to analyze ("day", "week", "month")
@@ -271,44 +231,44 @@ class HerokuInsightsService:
                             error_text = await response.text()
                             logger.debug(f"Response: {error_text[:200]}...")
                             return self._get_fallback_insights()
+
+            # Extract insights from the AI text response
+            try:
+                if last_ai_text:
+                    # Try to parse JSON from the AI response
+                    # Look for JSON content within the response
+                    json_start = last_ai_text.find('{')
+                    json_end = last_ai_text.rfind('}') + 1
+                    
+                    if json_start >= 0 and json_end > json_start:
+                        json_content = last_ai_text[json_start:json_end]
+                        try:
+                            insights_data = json.loads(json_content)
+                            
+                            # Add metadata
+                            insights_data["generated_at"] = datetime.now().isoformat()
+                            insights_data["time_range"] = time_range
+                            
+                            return insights_data
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Failed to parse JSON from AI response: {str(e)}")
+                            logger.debug(f"JSON content attempted to parse: {json_content}")
+                            return self._get_fallback_insights()
+                    else:
+                        logger.error("Could not find JSON content in AI response")
+                        logger.debug(f"AI response received: {last_ai_text[:200]}...")
+                        return self._get_fallback_insights()
+                else:
+                    logger.error("No AI text response was extracted from the Heroku Agents API")
+                    return self._get_fallback_insights()
+            except Exception as e:
+                logger.error(f"Error processing AI response: {str(e)}")
+                logger.debug(traceback.format_exc())
+                return self._get_fallback_insights()
         except Exception as e:
             logger.error(f"Error connecting to Heroku Agents API: {str(e)}")
             logger.debug(traceback.format_exc())
             return self._get_fallback_insights()
-                
-                # Extract insights from the AI text response
-                try:
-                    if last_ai_text:
-                        # Try to parse JSON from the AI response
-                        # Look for JSON content within the response
-                        json_start = last_ai_text.find('{')
-                        json_end = last_ai_text.rfind('}') + 1
-                        
-                        if json_start >= 0 and json_end > json_start:
-                            json_content = last_ai_text[json_start:json_end]
-                            try:
-                                insights_data = json.loads(json_content)
-                                
-                                # Add metadata
-                                insights_data["generated_at"] = datetime.now().isoformat()
-                                insights_data["time_range"] = time_range
-                                
-                                return insights_data
-                            except json.JSONDecodeError as e:
-                                logger.error(f"Failed to parse JSON from AI response: {str(e)}")
-                                logger.debug(f"JSON content attempted to parse: {json_content}")
-                                return self._get_fallback_insights()
-                        else:
-                            logger.error("Could not find JSON content in AI response")
-                            logger.debug(f"AI response received: {last_ai_text[:200]}...")
-                            return self._get_fallback_insights()
-                    else:
-                        logger.error("No AI text response was extracted from the Heroku Agents API")
-                        return self._get_fallback_insights()
-                except Exception as e:
-                    logger.error(f"Error processing AI response: {str(e)}")
-                    logger.debug(traceback.format_exc())
-                    return self._get_fallback_insights()
 
     def _get_fallback_insights_with_error(self, error_message: str = None) -> Dict[str, Any]:
         """
@@ -327,11 +287,11 @@ class HerokuInsightsService:
         return {
             "alert_pattern": {
                 "title": "Database configuration error",
-                "description": description
+                "description": "The AI insights service is temporarily unavailable."
             },
             "potential_issue": {
                 "title": "Missing follower database",
-                "description": "The Heroku Agents API requires a follower/replica database, but the current database is not configured as one."
+                "description": description
             },
             "suggested_action": {
                 "title": "Create a follower database",
@@ -339,18 +299,19 @@ class HerokuInsightsService:
             },
             "system_health_summary": "AI insights unavailable - database configuration error",
             "generated_at": datetime.now().isoformat(),
-            "time_range": "week",  # Default to weekly time range for fallback
+            "time_range": "week",
             "is_fallback": True
         }
-        
+    
     def _get_fallback_insights(self) -> Dict[str, Any]:
         """
-        Return generic fallback insights when the AI service is unavailable.
+        Return fallback insights for when the AI service is unavailable.
         
         Returns:
             Dict containing fallback insights
         """
         return self._get_fallback_insights_with_error("The AI insights service is temporarily unavailable.")
 
-# Create a singleton instance
+
+# Initialize the service as a global instance
 heroku_insights_service = HerokuInsightsService()
