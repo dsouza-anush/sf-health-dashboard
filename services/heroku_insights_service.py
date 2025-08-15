@@ -174,49 +174,118 @@ class HerokuInsightsService:
             ]
         }
 
-        # Make the API request
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                self.agents_endpoint,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                },
-                json=payload,
-                timeout=60  # 60-second timeout for the agent call
-            ) as response:
-                if response.status != 200:
-                    error_text = await response.text()
-                    logger.error(f"Error from Heroku Agents API: {error_text}")
+        # Make the API request using streaming response handling for SSE
+        try:
+            logger.info(f"Making request to Heroku Agents API endpoint: {self.agents_endpoint}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    self.agents_endpoint,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                        "Accept": "text/event-stream"
+                    },
+                    json=payload,
+                    timeout=120  # Increased timeout for the agent call (2 minutes)
+                ) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        logger.error(f"Error from Heroku Agents API: {error_text}")
+                        
+                        # Check for specific error messages
+                        if "Target database is not a replica" in error_text:
+                            logger.error("CRITICAL ERROR: The database is not a follower/replica. Must use a follower database.")
+                            logger.error("You need to create a follower database with: heroku addons:create heroku-postgresql:standard-0 --app sf-health-dashboard -- --follow DATABASE_URL")
+                            
+                        return self._get_fallback_insights_with_error("The database is not configured as a follower/replica, which is required by Heroku Agents API")
                     
-                    # Check for specific error messages
-                    if "Target database is not a replica" in error_text:
-                        logger.error("CRITICAL ERROR: The database is not a follower/replica. Must use a follower database.")
-                        logger.error("You need to create a follower database with: heroku addons:create heroku-postgresql:standard-0 --app sf-health-dashboard -- --follow DATABASE_URL")
-                        
-                    return self._get_fallback_insights_with_error("The database is not configured as a follower/replica, which is required by Heroku Agents API")
+                    # Process the event stream response
+                    last_ai_text = ""
+                    content_type = response.headers.get("Content-Type", "")
+                    logger.info(f"Response content type: {content_type}")
+                    
+                    # Handle SSE (Server-Sent Events) response
+                    if "text/event-stream" in content_type:
+                        try:
+                            # Process SSE stream according to format in documentation
+                            buffer = ""
+                            current_event = None
+                            current_data = ""
+                            final_message = None
+
+                            async for line in response.content:
+                                line = line.decode('utf-8').rstrip('\n')
+                                
+                                # Empty line marks the end of an event
+                                if not line.strip():
+                                    if current_event == "message" and current_data:
+                                        try:
+                                            data = json.loads(current_data)
+                                            
+                                            # Check for final completion message
+                                            if "object" in data and data["object"] == "chat.completion" and data.get("choices"):
+                                                for choice in data["choices"]:
+                                                    if choice.get("finish_reason") == "stop" and choice.get("message", {}).get("content"):
+                                                        final_message = choice["message"]["content"]
+                                                        logger.info(f"Found final completion message: {len(final_message)} chars")
+                                                        
+                                        except json.JSONDecodeError as e:
+                                            logger.debug(f"Invalid JSON in event: {e}")
+                                    
+                                    # Reset for next event
+                                    current_event = None
+                                    current_data = ""
+                                    continue
+                                
+                                # Parse the event line
+                                if line.startswith("event:"):
+                                    current_event = line[6:].strip()
+                                elif line.startswith("data:"):
+                                    current_data = line[5:].strip()
+                                elif line == "event:done":
+                                    logger.info("Received event:done marker, stream complete")
+                                    break
+                            
+                            # Use the final completion message as our AI text
+                            if final_message:
+                                last_ai_text = final_message
+                                logger.info("Successfully extracted AI response from SSE stream")
+                            else:
+                                logger.warning("Processed entire SSE stream but didn't find a final completion message")
+                                
+                        except Exception as e:
+                            logger.error(f"Error processing event stream: {str(e)}")
+                            logger.debug(traceback.format_exc())
+                            return self._get_fallback_insights()
+                    else:
+                        # Try standard JSON response as fallback
+                        try:
+                            result = await response.json()
+                            if "choices" in result:
+                                for choice in result.get("choices", []):
+                                    if choice.get("message", {}).get("content"):
+                                        last_ai_text = choice["message"]["content"]
+                                        break
+                        except Exception as e:
+                            logger.error(f"Failed to parse response as JSON: {str(e)}")
+                            error_text = await response.text()
+                            logger.debug(f"Response: {error_text[:200]}...")
+                            return self._get_fallback_insights()
+        except Exception as e:
+            logger.error(f"Error connecting to Heroku Agents API: {str(e)}")
+            logger.debug(traceback.format_exc())
+            return self._get_fallback_insights()
                 
+                # Extract insights from the AI text response
                 try:
-                    result = await response.json()
-                except Exception as e:
-                    # Handle non-JSON responses (e.g., text/event-stream)
-                    error_text = await response.text()
-                    logger.error(f"Failed to parse response as JSON: {str(e)}. Response: {error_text[:200]}...")
-                    return self._get_fallback_insights()
-                
-                # Extract the AI response
-                try:
-                    # Check if content is available in the response
-                    if "content" in result and len(result["content"]) > 0 and "text" in result["content"][0]:
-                        ai_response = result["content"][0]["text"]
-                        
+                    if last_ai_text:
                         # Try to parse JSON from the AI response
                         # Look for JSON content within the response
-                        json_start = ai_response.find('{')
-                        json_end = ai_response.rfind('}') + 1
+                        json_start = last_ai_text.find('{')
+                        json_end = last_ai_text.rfind('}') + 1
                         
                         if json_start >= 0 and json_end > json_start:
-                            json_content = ai_response[json_start:json_end]
+                            json_content = last_ai_text[json_start:json_end]
                             try:
                                 insights_data = json.loads(json_content)
                                 
@@ -231,10 +300,10 @@ class HerokuInsightsService:
                                 return self._get_fallback_insights()
                         else:
                             logger.error("Could not find JSON content in AI response")
-                            logger.debug(f"AI response received: {ai_response[:200]}...")
+                            logger.debug(f"AI response received: {last_ai_text[:200]}...")
                             return self._get_fallback_insights()
                     else:
-                        logger.error(f"Unexpected response structure from Heroku Agents API: {str(result)[:200]}...")
+                        logger.error("No AI text response was extracted from the Heroku Agents API")
                         return self._get_fallback_insights()
                 except Exception as e:
                     logger.error(f"Error processing AI response: {str(e)}")
