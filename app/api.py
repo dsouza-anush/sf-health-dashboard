@@ -4,6 +4,7 @@ from typing import List, Optional
 from database.db import get_db
 from models.schemas import HealthAlert, HealthAlertCreate, HealthAlertUpdate
 from services import health_service
+from services.jira_integration import create_jira_ticket_for_alert
 
 router = APIRouter()
 
@@ -110,3 +111,28 @@ async def create_and_categorize_alert(alert: HealthAlertCreate, db: Session = De
     categorized_alert = await health_service.categorize_alert(db, new_alert.id)
     
     return categorized_alert
+    
+@router.post("/alerts/{alert_id}/create-jira")
+async def create_jira_ticket(alert_id: int, db: Session = Depends(get_db)):
+    """Create a JIRA ticket for a specific health alert."""
+    # Get the alert first to check if it exists
+    alert = await health_service.get_alert_by_id(db, alert_id)
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+        
+    # Check if the alert already has a JIRA ticket
+    if alert.jira_ticket_id:
+        return {"message": f"Alert already has JIRA ticket: {alert.jira_ticket_id}",
+                "jira_ticket_id": alert.jira_ticket_id}
+    
+    # Create the JIRA ticket
+    success = await create_jira_ticket_for_alert(db, alert_id)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to create JIRA ticket")
+    
+    # Get the updated alert with the JIRA ticket ID
+    updated_alert = await health_service.get_alert_by_id(db, alert_id)
+    
+    return {"message": f"Created JIRA ticket: {updated_alert.jira_ticket_id}", 
+            "jira_ticket_id": updated_alert.jira_ticket_id}

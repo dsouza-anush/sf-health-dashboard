@@ -245,19 +245,122 @@
             });
         }
         
-        // JIRA button (mock for MVP)
+        // JIRA button
         const jiraBtn = document.getElementById('create-jira-btn');
         if (jiraBtn) {
             jiraBtn.addEventListener('click', function() {
-                alert('Creating JIRA ticket... This functionality will be implemented in Phase 2.');
+                // Disable the button and show processing state
+                jiraBtn.disabled = true;
+                jiraBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating JIRA ticket...';
+                
+                // Call the API to create a JIRA ticket
+                fetch('/api/alerts/{{ alert.id }}/create-jira', { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Show success message
+                        const ticketId = data.jira_ticket_id;
+                        const jiraDomain = "{{ jira_domain }}";
+                        let successMessage = `JIRA ticket ${ticketId} created successfully!`;
+                        
+                        if (jiraDomain) {
+                            successMessage += `\nView ticket at: ${jiraDomain}/browse/${ticketId}`;
+                        }
+                        
+                        alert(successMessage);
+                        window.location.reload(); // Reload to show the updated ticket ID
+                    })
+                    .catch(error => {
+                        // Show error message
+                        console.error('Error creating JIRA ticket:', error);
+                        jiraBtn.disabled = false;
+                        jiraBtn.innerHTML = 'Create JIRA Ticket';
+                        alert('Error creating JIRA ticket. Please check credentials and try again.');
+                    });
             });
         }
         
-        // Slack button (mock for MVP)
+        // Slack button
         const slackBtn = document.getElementById('send-slack-btn');
         if (slackBtn) {
             slackBtn.addEventListener('click', function() {
-                alert('Sending Slack alert... This functionality will be implemented in Phase 2.');
+                // Disable the button and show processing state
+                slackBtn.disabled = true;
+                slackBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending to Slack...';
+                
+                // First, ensure the alert is categorized (need AI priority for Slack)
+                let sendToSlack = function() {
+                    // Create a custom update object to force a manual Slack send
+                    const updateData = {
+                        slack_alert_sent: false  // Reset the flag to force a new send
+                    };
+                    
+                    // Send the update
+                    fetch(`/api/alerts/{{ alert.id }}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updateData)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        // Now recategorize which will trigger the Slack notification
+                        return fetch('/api/alerts/{{ alert.id }}/recategorize', { method: 'POST' });
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Show success message
+                        alert('Alert sent to Slack successfully!');
+                        window.location.reload(); // Reload to update the UI
+                    })
+                    .catch(error => {
+                        // Show error message
+                        console.error('Error sending Slack alert:', error);
+                        slackBtn.disabled = false;
+                        slackBtn.innerHTML = 'Send Slack Alert';
+                        alert('Error sending Slack alert. Please check Slack credentials and try again.');
+                    });
+                };
+                
+                // Check if alert is already categorized
+                if (!('{{ alert.ai_category }}')) {
+                    // Not categorized, let's categorize first
+                    fetch('/api/alerts/{{ alert.id }}/categorize', { method: 'POST' })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // Now send to Slack
+                            sendToSlack();
+                        })
+                        .catch(error => {
+                            console.error('Error categorizing alert:', error);
+                            slackBtn.disabled = false;
+                            slackBtn.innerHTML = 'Send Slack Alert';
+                            alert('Error categorizing alert before sending to Slack. Please try again.');
+                        });
+                } else {
+                    // Already categorized, just send to Slack
+                    sendToSlack();
+                }
             });
         }
     });

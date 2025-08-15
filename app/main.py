@@ -114,9 +114,12 @@ async def alert_detail(request: Request, alert_id: int, db: Session = Depends(ge
             {"request": request, "message": "Alert not found"}
         )
     
+    # Get JIRA domain from environment for link generation
+    jira_domain = os.getenv("JIRA_DOMAIN", "")
+    
     return templates.TemplateResponse(
         "alert_detail.html",
-        {"request": request, "alert": alert}
+        {"request": request, "alert": alert, "jira_domain": jira_domain}
     )
 
 @app.get("/categorize-all", response_class=HTMLResponse)
