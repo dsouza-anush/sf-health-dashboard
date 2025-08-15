@@ -148,70 +148,7 @@ class HerokuInsightsService:
         }}
         """
         
-        # Define SQL query based on time_range
-        sql_query = f"""
-        -- Get alert counts by category and priority over the specified time period
-        WITH alert_stats AS (
-            SELECT
-                category,
-                ai_category,
-                ai_priority,
-                COUNT(*) as count,
-                (COUNT(*) * 100.0 / (SELECT COUNT(*) FROM health_alerts WHERE created_at >= NOW() - INTERVAL '{time_window}')) as percentage
-            FROM
-                health_alerts
-            WHERE
-                created_at >= NOW() - INTERVAL '{time_window}'
-            GROUP BY
-                category, ai_category, ai_priority
-            ORDER BY
-                count DESC
-        ),
-        -- Get daily alert counts to track trends
-        daily_counts AS (
-            SELECT
-                DATE(created_at) as alert_date,
-                category,
-                COUNT(*) as count
-            FROM
-                health_alerts
-            WHERE
-                created_at >= NOW() - INTERVAL '{time_window}'
-            GROUP BY
-                DATE(created_at), category
-            ORDER BY
-                alert_date, category
-        ),
-        -- Get unresolved critical/high alerts
-        critical_alerts AS (
-            SELECT
-                title,
-                description,
-                ai_category,
-                ai_priority,
-                created_at
-            FROM
-                health_alerts
-            WHERE
-                created_at >= NOW() - INTERVAL '{time_window}'
-                AND ai_priority IN ('critical', 'high')
-                AND is_resolved = FALSE
-            ORDER BY
-                CASE WHEN ai_priority = 'critical' THEN 0 WHEN ai_priority = 'high' THEN 1 ELSE 2 END,
-                created_at DESC
-            LIMIT 10
-        )
-        -- Combine all statistics in JSON format
-        SELECT
-            json_build_object(
-                'alert_stats', (SELECT json_agg(alert_stats) FROM alert_stats),
-                'daily_trends', (SELECT json_agg(daily_counts) FROM daily_counts),
-                'critical_alerts', (SELECT json_agg(critical_alerts) FROM critical_alerts),
-                'total_alerts', (SELECT COUNT(*) FROM health_alerts WHERE created_at >= NOW() - INTERVAL '{time_window}'),
-                'unresolved_alerts', (SELECT COUNT(*) FROM health_alerts WHERE created_at >= NOW() - INTERVAL '{time_window}' AND is_resolved = FALSE),
-                'time_period', '{time_window}'
-            ) as alert_data;
-        """
+        # Let Claude generate the appropriate SQL query based on the prompt
         
         # Prepare the request payload for Heroku Agents API
         payload = {
@@ -269,28 +206,39 @@ class HerokuInsightsService:
                 
                 # Extract the AI response
                 try:
-                    ai_response = result["content"][0]["text"]
-                    
-                    # Try to parse JSON from the AI response
-                    # Look for JSON content within the response
-                    json_start = ai_response.find('{')
-                    json_end = ai_response.rfind('}') + 1
-                    
-                    if json_start >= 0 and json_end > json_start:
-                        json_content = ai_response[json_start:json_end]
-                        insights_data = json.loads(json_content)
+                    # Check if content is available in the response
+                    if "content" in result and len(result["content"]) > 0 and "text" in result["content"][0]:
+                        ai_response = result["content"][0]["text"]
                         
-                        # Add metadata
-                        insights_data["generated_at"] = datetime.now().isoformat()
-                        insights_data["time_range"] = time_range
+                        # Try to parse JSON from the AI response
+                        # Look for JSON content within the response
+                        json_start = ai_response.find('{')
+                        json_end = ai_response.rfind('}') + 1
                         
-                        return insights_data
+                        if json_start >= 0 and json_end > json_start:
+                            json_content = ai_response[json_start:json_end]
+                            try:
+                                insights_data = json.loads(json_content)
+                                
+                                # Add metadata
+                                insights_data["generated_at"] = datetime.now().isoformat()
+                                insights_data["time_range"] = time_range
+                                
+                                return insights_data
+                            except json.JSONDecodeError as e:
+                                logger.error(f"Failed to parse JSON from AI response: {str(e)}")
+                                logger.debug(f"JSON content attempted to parse: {json_content}")
+                                return self._get_fallback_insights()
+                        else:
+                            logger.error("Could not find JSON content in AI response")
+                            logger.debug(f"AI response received: {ai_response[:200]}...")
+                            return self._get_fallback_insights()
                     else:
-                        logger.error("Could not find JSON content in AI response")
+                        logger.error(f"Unexpected response structure from Heroku Agents API: {str(result)[:200]}...")
                         return self._get_fallback_insights()
-                        
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    logger.error(f"Error parsing AI response: {str(e)}")
+                except Exception as e:
+                    logger.error(f"Error processing AI response: {str(e)}")
+                    logger.debug(traceback.format_exc())
                     return self._get_fallback_insights()
 
     def _get_fallback_insights_with_error(self, error_message: str = None) -> Dict[str, Any]:
