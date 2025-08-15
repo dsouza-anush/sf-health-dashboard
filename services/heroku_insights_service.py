@@ -25,7 +25,7 @@ class HerokuInsightsService:
         self.agents_endpoint = f"{self.inference_url}/v1/agents/heroku"
         
         # Get app name from environment
-        self.app_name = os.getenv("HEROKU_APP_NAME")
+        self.app_name = os.getenv("APP_NAME") or os.getenv("HEROKU_APP_NAME")
         
         # Get database URL from environment - use follower DB if available (required by Heroku Agents API)
         self.db_url = os.getenv("DATABASE_FOLLOWER_URL") or os.getenv("HEROKU_POSTGRESQL_NAVY_URL") or os.getenv("DATABASE_URL")
