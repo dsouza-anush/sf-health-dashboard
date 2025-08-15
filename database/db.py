@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import Engine
@@ -44,10 +44,10 @@ def ping_connection(connection, branch):
 
     # Perform a simple query to verify connection is still valid
     try:
-        connection.scalar("SELECT 1")
-    except Exception:
+        connection.scalar(text("SELECT 1"))
+    except Exception as e:
         # Recycle the connection if there's an issue
-        logger.warning("Connection ping failed, recycling connection")
+        logger.warning(f"Connection ping failed, recycling connection: {str(e)}")
         connection.invalidate()
         raise
 
