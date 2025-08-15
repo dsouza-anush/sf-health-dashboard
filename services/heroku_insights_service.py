@@ -27,8 +27,10 @@ class HerokuInsightsService:
         # Get app name from environment
         self.app_name = os.getenv("APP_NAME") or os.getenv("HEROKU_APP_NAME")
         
-        # Get database URL from environment - use follower DB if available (required by Heroku Agents API)
-        self.db_url = os.getenv("DATABASE_FOLLOWER_URL") or os.getenv("HEROKU_POSTGRESQL_NAVY_URL") or os.getenv("DATABASE_URL")
+        # Get database URL from environment - Heroku Agents API requires a follower database
+        # Try to use the newly created follower database (COBALT)
+        self.db_url = os.getenv("HEROKU_POSTGRESQL_COBALT_URL") or os.getenv("DATABASE_URL")
+        self.is_follower_db = self.db_url == os.getenv("HEROKU_POSTGRESQL_COBALT_URL")
         
         # Check for required configuration
         if not self.api_key:
@@ -38,12 +40,19 @@ class HerokuInsightsService:
         if not self.db_url:
             logger.warning("No database URL found. AI insights will not work.")
             
-        # Log whether we're using a follower database (required by Heroku Agents API)
-        follower_db = self.db_url == os.getenv("DATABASE_FOLLOWER_URL") or self.db_url == os.getenv("HEROKU_POSTGRESQL_NAVY_URL")
-        if follower_db:
-            logger.info("Using follower database for AI insights")
+        # Check if we're using a Standard database that can support follower functionality
+        self.using_standard_db = "Standard" in os.popen("heroku pg:info -a sf-health-dashboard | grep Plan").read()
+        self.fork_follow_available = False
+        
+        # Log database information
+        if self.is_follower_db:
+            logger.info("Using dedicated follower database for AI insights")
+            self.fork_follow_available = True
+        elif self.using_standard_db:
+            logger.info("Using Standard-0 database but it's not a follower database")
+            logger.warning("The Heroku Agents API requires a follower database - queries may be rejected")
         else:
-            logger.warning("No follower database URL found. Using primary database URL, which may not work with Heroku Agents API")
+            logger.warning("Using database that doesn't support follower functionality required by Heroku Agents API")
             
         logger.info(f"Initialized Heroku Insights Service with model: {self.model_id}")
 
@@ -98,6 +107,15 @@ class HerokuInsightsService:
         Returns:
             Dict containing AI insights
         """
+        # Check if we're ready to run queries with the Heroku Agents API
+        if not self.using_standard_db:
+            logger.warning("Standard database is required for Heroku Agents API. Using fallback insights.")
+            return self._get_fallback_insights_with_error("Standard database plan (Standard-0 or higher) is required for Heroku Agents API.")
+            
+        # Even with a Standard database, we need a follower database for the Agents API
+        if not self.is_follower_db:
+            logger.warning("Database is not a follower/replica. Heroku Agents API may reject the query.")
+            # We'll try anyway, and let the error handling catch any issues
         # Define time window based on time_range
         if time_range == "day":
             time_window = "24 hours"
@@ -242,7 +260,13 @@ class HerokuInsightsService:
                 if response.status != 200:
                     error_text = await response.text()
                     logger.error(f"Error from Heroku Agents API: {error_text}")
-                    return self._get_fallback_insights()
+                    
+                    # Check for specific error messages
+                    if "Target database is not a replica" in error_text:
+                        logger.error("CRITICAL ERROR: The database is not a follower/replica. Must use a follower database.")
+                        logger.error("You need to create a follower database with: heroku addons:create heroku-postgresql:standard-0 --app sf-health-dashboard -- --follow DATABASE_URL")
+                        
+                    return self._get_fallback_insights_with_error("The database is not configured as a follower/replica, which is required by Heroku Agents API")
                 
                 try:
                     result = await response.json()
@@ -278,31 +302,47 @@ class HerokuInsightsService:
                     logger.error(f"Error parsing AI response: {str(e)}")
                     return self._get_fallback_insights()
 
-    def _get_fallback_insights(self) -> Dict[str, Any]:
+    def _get_fallback_insights_with_error(self, error_message: str = None) -> Dict[str, Any]:
         """
-        Return fallback insights when the AI service is unavailable.
+        Return fallback insights with a specific error message.
         
+        Args:
+            error_message: Specific error message to include in the fallback
+            
         Returns:
             Dict containing fallback insights
         """
+        description = "The database is not configured as a follower/replica, which is required by Heroku Agents API."
+        if error_message:
+            description = error_message
+            
         return {
             "alert_pattern": {
-                "title": "Alert pattern analysis unavailable",
-                "description": "The AI service is currently unavailable to analyze alert patterns."
+                "title": "Database configuration error",
+                "description": description
             },
             "potential_issue": {
-                "title": "Issue identification unavailable",
-                "description": "The AI service is currently unavailable to identify potential issues."
+                "title": "Missing follower database",
+                "description": "The Heroku Agents API requires a follower/replica database, but the current database is not configured as one."
             },
             "suggested_action": {
-                "title": "Action recommendation unavailable",
-                "description": "The AI service is currently unavailable to suggest actions."
+                "title": "Create a follower database",
+                "description": "Run: heroku addons:create heroku-postgresql:standard-0 --app sf-health-dashboard -- --follow DATABASE_URL"
             },
-            "system_health_summary": "AI insights unavailable, please check system status manually",
+            "system_health_summary": "AI insights unavailable - database configuration error",
             "generated_at": datetime.now().isoformat(),
             "time_range": "week",  # Default to weekly time range for fallback
             "is_fallback": True
         }
+        
+    def _get_fallback_insights(self) -> Dict[str, Any]:
+        """
+        Return generic fallback insights when the AI service is unavailable.
+        
+        Returns:
+            Dict containing fallback insights
+        """
+        return self._get_fallback_insights_with_error("The AI insights service is temporarily unavailable.")
 
 # Create a singleton instance
 heroku_insights_service = HerokuInsightsService()
