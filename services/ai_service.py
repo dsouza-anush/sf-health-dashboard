@@ -157,7 +157,11 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     Category (from monitoring system): {alert.category}
     Raw Data: {alert.raw_data if alert.raw_data else "None provided"}
     
-    Based on these alert details, please provide a detailed analysis.
+    Based on these alert details, please provide a detailed analysis using this format:
+    **Category:** [Choose one category]
+    **Priority:** [low, medium, high, or critical]
+    **Summary:** [1-2 sentence summary]
+    **Recommendation:** [specific action to take]
     """
     
     try:
@@ -176,6 +180,35 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
                     recommendation=raw_result.get('recommendation', 'Review alert details.')
                 )
                 return result
+            elif hasattr(raw_result, 'output'):  # Handle AgentRunResult object
+                logger.info("Processing AgentRunResult object")
+                try:
+                    # Extract key fields using regex
+                    import re
+                    result_text = raw_result.output
+                    
+                    # Extract fields using regex patterns
+                    category_match = re.search(r'\*\*Category:\*\*\s*(\w+)', result_text, re.IGNORECASE)
+                    priority_match = re.search(r'\*\*Priority:\*\*\s*(\w+)', result_text, re.IGNORECASE)
+                    summary_match = re.search(r'\*\*Summary:\*\*\s*([^\n]+)', result_text, re.IGNORECASE)
+                    recommendation_match = re.search(r'\*\*Recommendation:\*\*\s*([^\n]+)', result_text, re.IGNORECASE)
+                    
+                    category = category_match.group(1) if category_match else "Configuration"
+                    priority = priority_match.group(1) if priority_match else "medium"
+                    summary = summary_match.group(1) if summary_match else "Analysis completed."
+                    recommendation = recommendation_match.group(1) if recommendation_match else "Review alert details."
+                    
+                    logger.info(f"Extracted fields - Category: {category}, Priority: {priority}")
+                    
+                    return HealthAlertCategorization(
+                        category=category,
+                        priority=priority,
+                        summary=summary,
+                        recommendation=recommendation
+                    )
+                except Exception as e:
+                    logger.error(f"Error parsing AgentRunResult: {str(e)}")
+                    return get_default_categorization(f"Error parsing response: {str(e)}")
             elif isinstance(raw_result, str):
                 # Handle string response by extracting JSON if possible
                 try:
