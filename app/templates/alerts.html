@@ -5,7 +5,12 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Health Alerts</h4>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="mb-0">Health Alerts</h1>
+            <a href="/create-ticket" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-1"></i> Create Alert
+            </a>
+        </div>
     </div>
 </div>
 
@@ -13,17 +18,25 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Filter Alerts</span>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-funnel me-2"></i>
+                    <span>Filter Alerts</span>
+                </div>
                 <div>
-                    <button id="apply-filters" class="btn btn-sm btn-primary me-2">Apply Filters</button>
-                    <a href="/categorize-all" class="btn btn-sm btn-primary">Categorize All</a>
+                    <button id="apply-filters" class="btn btn-sm btn-primary me-2">
+                        <i class="bi bi-check2 me-1"></i> Apply Filters
+                    </button>
+                    <a href="/categorize-all" class="btn btn-sm btn-outline">
+                        <i class="bi bi-magic me-1"></i> Categorize All
+                    </a>
                 </div>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
+                        <label for="category-filter" class="form-label text-sm">Category</label>
                         <select id="category-filter" class="form-select mb-2">
-                            <option value="">Filter by Category</option>
+                            <option value="">All Categories</option>
                             <option value="optimizer">Optimizer</option>
                             <option value="security">Security</option>
                             <option value="limits">Limits</option>
@@ -34,8 +47,9 @@
                         </select>
                     </div>
                     <div class="col-md-4">
+                        <label for="priority-filter" class="form-label text-sm">Priority</label>
                         <select id="priority-filter" class="form-select mb-2">
-                            <option value="">Filter by Priority</option>
+                            <option value="">All Priorities</option>
                             <option value="critical">Critical</option>
                             <option value="high">High</option>
                             <option value="medium">Medium</option>
@@ -44,8 +58,9 @@
                         </select>
                     </div>
                     <div class="col-md-4">
+                        <label for="status-filter" class="form-label text-sm">Status</label>
                         <select id="status-filter" class="form-select mb-2">
-                            <option value="">Filter by Status</option>
+                            <option value="">All Statuses</option>
                             <option value="false">Open</option>
                             <option value="true">Resolved</option>
                         </select>
@@ -65,14 +80,14 @@
                         <caption id="filter-results" class="p-0"></caption>
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th class="text-center">#</th>
                                 <th>Title</th>
                                 <th>Category</th>
                                 <th>Source</th>
                                 <th>AI Category</th>
                                 <th>Priority</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -81,52 +96,54 @@
                                 data-category="{{ alert.category }}" 
                                 data-priority="{{ alert.ai_priority }}" 
                                 data-status="{{ alert.is_resolved }}">
-                                <td>{{ alert.id }}</td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ alert.id }}</span></td>
                                 <td>{{ alert.title }}</td>
                                 <td>{{ alert.category }}</td>
                                 <td>{{ alert.source_system }}</td>
                                 <td>
                                     {% if alert.ai_category %}
-                                    <span class="badge bg-info">{{ alert.ai_category }}</span>
+                                    <span class="category-badge">{{ alert.ai_category }}</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Uncategorized</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if alert.ai_priority == "critical" %}
-                                    <span class="badge bg-danger">Critical</span>
+                                    <span class="badge priority-critical">Critical</span>
                                     {% elif alert.ai_priority == "high" %}
-                                    <span class="badge bg-warning">High</span>
+                                    <span class="badge priority-high">High</span>
                                     {% elif alert.ai_priority == "medium" %}
-                                    <span class="badge bg-primary">Medium</span>
+                                    <span class="badge priority-medium">Medium</span>
                                     {% elif alert.ai_priority == "low" %}
-                                    <span class="badge bg-success">Low</span>
+                                    <span class="badge priority-low">Low</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Pending</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if alert.is_resolved %}
-                                    <span class="badge bg-success">Resolved</span>
+                                    <span class="status-badge status-resolved">Resolved</span>
                                     {% else %}
-                                    <span class="badge bg-warning">Open</span>
+                                    <span class="status-badge status-open">Open</span>
                                     {% endif %}
                                 </td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a href="/alert/{{ alert.id }}" class="btn btn-sm btn-info">View</a>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="/alert/{{ alert.id }}" class="action-btn" title="View">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
                                         {% if not alert.ai_category %}
-                                        <button class="btn btn-sm btn-primary categorize-btn" data-id="{{ alert.id }}">
-                                            Categorize
+                                        <button class="action-btn categorize-btn" data-id="{{ alert.id }}" title="Categorize">
+                                            <i class="bi bi-tag"></i>
                                         </button>
                                         {% endif %}
                                         {% if not alert.is_resolved %}
-                                        <button class="btn btn-sm btn-success resolve-btn" data-id="{{ alert.id }}">
-                                            Resolve
+                                        <button class="action-btn resolve-btn" data-id="{{ alert.id }}" title="Resolve">
+                                            <i class="bi bi-check2-all"></i>
                                         </button>
                                         {% else %}
-                                        <button class="btn btn-sm btn-warning unresolve-btn" data-id="{{ alert.id }}">
-                                            Reopen
+                                        <button class="action-btn unresolve-btn" data-id="{{ alert.id }}" title="Reopen">
+                                            <i class="bi bi-arrow-clockwise"></i>
                                         </button>
                                         {% endif %}
                                     </div>
@@ -200,9 +217,14 @@
                     if (priorityValue) filters.push(`Priority: ${priorityValue}`);
                     if (statusValue) filters.push(`Status: ${statusValue === 'true' ? 'Resolved' : 'Open'}`);
                     
-                    filterInfo.innerHTML = `<div class="alert alert-info mb-0 mt-2">
-                        Showing ${matchCount} filtered results (${filters.join(', ')})
-                        <button id="clear-filters" class="btn btn-sm btn-outline-secondary ms-2">Clear Filters</button>
+                    filterInfo.innerHTML = `<div class="alert alert-info mb-0 mt-2 d-flex align-items-center justify-content-between">
+                        <div>
+                            <i class="bi bi-funnel-fill me-2"></i>
+                            Showing ${matchCount} filtered results (${filters.join(', ')})                        
+                        </div>
+                        <button id="clear-filters" class="btn btn-sm btn-outline">
+                            <i class="bi bi-x-circle me-1"></i> Clear Filters
+                        </button>
                     </div>`;
                     
                     document.getElementById('clear-filters').addEventListener('click', clearFilters);
@@ -236,7 +258,8 @@
             btn.addEventListener('click', function() {
                 const alertId = this.getAttribute('data-id');
                 this.disabled = true;
-                this.textContent = 'Processing...';
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                 
                 fetch(`/api/alerts/${alertId}/categorize`, { method: 'POST' })
                     .then(response => response.json())
@@ -246,8 +269,8 @@
                     .catch(error => {
                         console.error('Error categorizing alert:', error);
                         this.disabled = false;
-                        this.textContent = 'Categorize';
-                        alert('Error categorizing alert. Please try again.');
+                        this.innerHTML = originalIcon;
+                        handleApiError(error, 'Error categorizing alert. Please try again.');
                     });
             });
         });
@@ -257,7 +280,8 @@
             btn.addEventListener('click', function() {
                 const alertId = this.getAttribute('data-id');
                 this.disabled = true;
-                this.textContent = 'Processing...';
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                 
                 fetch(`/api/alerts/${alertId}/resolve`, { method: 'PUT' })
                     .then(response => response.json())
@@ -267,8 +291,8 @@
                     .catch(error => {
                         console.error('Error resolving alert:', error);
                         this.disabled = false;
-                        this.textContent = 'Resolve';
-                        alert('Error resolving alert. Please try again.');
+                        this.innerHTML = originalIcon;
+                        handleApiError(error, 'Error resolving alert. Please try again.');
                     });
             });
         });
@@ -278,7 +302,8 @@
             btn.addEventListener('click', function() {
                 const alertId = this.getAttribute('data-id');
                 this.disabled = true;
-                this.textContent = 'Processing...';
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-hourglass-split"></i>';
                 
                 fetch(`/api/alerts/${alertId}/unresolve`, { method: 'PUT' })
                     .then(response => response.json())
@@ -288,8 +313,8 @@
                     .catch(error => {
                         console.error('Error reopening alert:', error);
                         this.disabled = false;
-                        this.textContent = 'Reopen';
-                        alert('Error reopening alert. Please try again.');
+                        this.innerHTML = originalIcon;
+                        handleApiError(error, 'Error reopening alert. Please try again.');
                     });
             });
         });
