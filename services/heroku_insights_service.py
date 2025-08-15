@@ -295,6 +295,7 @@ class HerokuInsightsService:
             },
             "system_health_summary": "AI insights unavailable, please check system status manually",
             "generated_at": datetime.now().isoformat(),
+            "time_range": "week",  # Default to weekly time range for fallback
             "is_fallback": True
         }
 
