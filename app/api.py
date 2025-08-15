@@ -64,6 +64,15 @@ async def categorize_alert(alert_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Alert not found")
     return alert
 
+@router.post("/alerts/{alert_id}/recategorize", response_model=HealthAlert)
+async def recategorize_alert(alert_id: int, db: Session = Depends(get_db)):
+    """Recategorize an already categorized health alert using AI."""
+    # Same implementation as categorize_alert - the service function will override any existing categorization
+    alert = await health_service.categorize_alert(db, alert_id)
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    return alert
+
 @router.post("/alerts/categorize-all")
 async def categorize_all_alerts(db: Session = Depends(get_db)):
     """Categorize all uncategorized health alerts."""
