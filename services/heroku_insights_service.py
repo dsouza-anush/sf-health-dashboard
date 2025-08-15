@@ -27,9 +27,9 @@ class HerokuInsightsService:
         # Get app name from environment
         self.app_name = os.getenv("APP_NAME") or os.getenv("HEROKU_APP_NAME")
         
-        # Explicitly use COBALT database URL which is a follower database (required by Heroku Agents API)
-        self.db_url = os.getenv("HEROKU_POSTGRESQL_COBALT_URL")
-        self.db_attachment = "HEROKU_POSTGRESQL_COBALT"  # Specify the database attachment name explicitly
+        # Use COBALT database which is a follower database (required by Heroku Agents API)
+        # Do not use the URL directly - instead use the attachment name which Heroku Agents API expects
+        self.db_attachment = "HEROKU_POSTGRESQL_COBALT" 
         self.is_follower_db = True  # COBALT is a follower database
         
         # Check for required configuration
@@ -45,10 +45,7 @@ class HerokuInsightsService:
         self.fork_follow_available = True  # COBALT is a follower database
         
         # Log database information
-        if not self.db_url:
-            logger.error("No database URL found. Check environment configuration.")
-        else:
-            logger.info("Using follower database for AI insights")
+        logger.info(f"Using follower database '{self.db_attachment}' for AI insights")
             
         logger.info(f"Initialized Heroku Insights Service with model: {self.model_id}")
 
@@ -76,7 +73,7 @@ class HerokuInsightsService:
         
         try:
             # Ensure we have all required configuration
-            if not all([self.api_key, self.app_name, self.db_url]):
+            if not all([self.api_key, self.app_name]):
                 logger.error("Missing required configuration for AI insights")
                 return self._get_fallback_insights()
             
@@ -235,7 +232,7 @@ class HerokuInsightsService:
                         "target_app_name": self.app_name,
                         "dyno_size": "standard-1x",
                         "tool_params": {
-                            "db_attachment": self.db_attachment
+                            "db_attachment": "HEROKU_POSTGRESQL_COBALT"
                         }
                     }
                 }
