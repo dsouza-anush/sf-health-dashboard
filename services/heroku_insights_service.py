@@ -221,8 +221,7 @@ class HerokuInsightsService:
                         "target_app_name": self.app_name,
                         "dyno_size": "basic",
                         "tool_params": {
-                            "db_attachment": self.db_url,
-                            "read_only": True  # Ensure read-only access for safety
+                            "db_attachment": self.db_url
                         }
                     }
                 }
