@@ -54,6 +54,8 @@ heroku pg:promote HEROKU_POSTGRESQL_COLOR_URL --as HEROKU_POSTGRESQL_COBALT -a s
 
 Replace `COLOR_URL` with the actual color assigned by Heroku (like PURPLE, CYAN, etc.)
 
+> **NOTE:** For detailed guidance on when to use the primary database versus the follower database, see the internal document `docs/DATABASE_USAGE.md`, which contains comprehensive guidelines, code examples, and best practices.
+
 ## API Usage
 
 ### Endpoint

@@ -32,6 +32,10 @@ ENV/
 # Claude specific files
 CLAUDE.md
 
+# Internal documentation not for git tracking
+docs/INTERNAL_*.md
+docs/DATABASE_USAGE.md
+
 # IDE files
 .idea/
 .vscode/
