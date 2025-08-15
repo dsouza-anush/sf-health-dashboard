@@ -800,6 +800,16 @@ p {
   background-color: rgba(239, 68, 68, 0.1);
 }
 
+/* Filter card */
+.filter-card {
+  margin-bottom: var(--space-4);
+  transition: all 0.3s ease;
+}
+
+.filter-card.collapsed {
+  box-shadow: none;
+}
+
 /* Collapsible Insights */
 .insight-preview {
   cursor: pointer;

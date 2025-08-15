@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize collapsible AI insights and health summary
     initCollapsibleComponents();
     
+    // Initialize collapsible filters
+    initCollapsibleFilters();
+    
     // Initialize tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -269,5 +272,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
+    
+    // Initialize collapsible filters function
+    function initCollapsibleFilters() {
+        const toggleFiltersBtn = document.getElementById('toggle-filters');
+        const filterBody = document.getElementById('filter-body');
+        
+        if (toggleFiltersBtn && filterBody) {
+            toggleFiltersBtn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                
+                if (filterBody.style.display === 'none') {
+                    // Expand filters
+                    filterBody.style.display = 'block';
+                    filterBody.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-up');
+                    icon.classList.add('bi-chevron-down');
+                    
+                    // Animate the expansion
+                    setTimeout(() => {
+                        filterBody.style.transition = 'opacity 0.3s ease';
+                        filterBody.style.opacity = '1';
+                    }, 10);
+                } else {
+                    // Collapse filters with animation
+                    filterBody.style.transition = 'opacity 0.2s ease';
+                    filterBody.style.opacity = '0';
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-up');
+                    
+                    setTimeout(() => {
+                        filterBody.style.display = 'none';
+                    }, 200);
+                }
+            });
+        }
     }
 });
