@@ -78,53 +78,61 @@
     
     <div class="col-md-4">
         <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">AI Analysis</h5>
+            <div class="card-header analysis-header">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-robot me-2"></i>
+                    <h5 class="mb-0">AI Analysis</h5>
+                </div>
             </div>
             <div class="card-body">
                 {% if alert.ai_category %}
-                <div class="mb-3">
-                    <p>
-                        <strong>Category:</strong>
-                        <span class="badge bg-info">{{ alert.ai_category }}</span>
-                    </p>
-                    <p>
-                        <strong>Priority:</strong>
-                        {% if alert.ai_priority == "critical" %}
-                        <span class="badge bg-danger">Critical</span>
-                        {% elif alert.ai_priority == "high" %}
-                        <span class="badge bg-warning">High</span>
-                        {% elif alert.ai_priority == "medium" %}
-                        <span class="badge bg-primary">Medium</span>
-                        {% elif alert.ai_priority == "low" %}
-                        <span class="badge bg-success">Low</span>
-                        {% endif %}
-                    </p>
+                <div class="analysis-result-section">
+                    <div class="d-flex mb-4 gap-4">
+                        <div>
+                            <div class="analysis-result-label">Category</div>
+                            <span class="category-badge">{{ alert.ai_category }}</span>
+                        </div>
+                        <div>
+                            <div class="analysis-result-label">Priority</div>
+                            {% if alert.ai_priority == "critical" %}
+                            <span class="badge priority-critical">Critical</span>
+                            {% elif alert.ai_priority == "high" %}
+                            <span class="badge priority-high">High</span>
+                            {% elif alert.ai_priority == "medium" %}
+                            <span class="badge priority-medium">Medium</span>
+                            {% elif alert.ai_priority == "low" %}
+                            <span class="badge priority-low">Low</span>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="mb-3">
-                    <h6>Summary</h6>
-                    <p>{{ alert.ai_summary }}</p>
+                <div class="analysis-result-section">
+                    <div class="analysis-result-label">Summary</div>
+                    <div class="analysis-result-content">{{ alert.ai_summary }}</div>
                 </div>
                 
-                <div class="mb-3">
-                    <h6>Recommendation</h6>
-                    <p>{{ alert.ai_recommendation }}</p>
+                <div class="analysis-result-section">
+                    <div class="analysis-result-label">Recommendation</div>
+                    <div class="analysis-result-content">{{ alert.ai_recommendation }}</div>
                 </div>
                 
-                <div class="d-grid mt-3">
-                    <button id="recategorize-btn" class="btn btn-outline-primary btn-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise me-1" viewBox="0 0 16 16">
-                          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-                          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-                        </svg>
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                    <span class="text-sm text-muted">Last analyzed: {{ alert.updated_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <button id="recategorize-btn" class="btn btn-sm btn-outline">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
                         Recategorize with AI
                     </button>
                 </div>
                 {% else %}
                 <div class="text-center py-4">
-                    <p class="lead">This alert hasn't been analyzed yet.</p>
-                    <button id="categorize-btn-alt" class="btn btn-primary">
+                    <div class="mb-4">
+                        <i class="bi bi-magic text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h6 class="text-neutral-600 dark-mode text-neutral-300">This alert hasn't been analyzed yet</h6>
+                    <p class="text-sm text-neutral-500">AI will analyze this alert and provide category, priority, and recommendations</p>
+                    <button id="categorize-btn-alt" class="btn btn-primary mt-3">
+                        <i class="bi bi-stars me-1"></i>
                         Run AI Analysis
                     </button>
                 </div>

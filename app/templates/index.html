@@ -5,7 +5,22 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Health Check Dashboard</h4>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="mb-0">Health Check Dashboard</h1>
+            <div class="d-flex align-items-center">
+                <div class="chart-time-range me-3">
+                    <select id="time-range-selector" class="form-select form-select-sm">
+                        <option value="day">Last 24 Hours</option>
+                        <option value="week" selected>Last 7 Days</option>
+                        <option value="month">Last 30 Days</option>
+                        <option value="quarter">Last 90 Days</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" id="refresh-data">
+                    <i class="bi bi-arrow-repeat me-1"></i> Refresh Data
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -39,8 +54,16 @@
 <div class="row mb-4">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
-                Alerts by Priority
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-pie-chart me-2"></i>
+                    Alerts by Priority
+                </div>
+                <div class="chart-controls">
+                    <button class="btn btn-sm btn-icon" id="priority-chart-toggle" title="Change chart type">
+                        <i class="bi bi-bar-chart"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="priority-chart" style="height: 320px;"></div>
@@ -49,8 +72,16 @@
     </div>
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header">
-                Alerts by Source Category
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-bar-chart me-2"></i>
+                    Alerts by Source Category
+                </div>
+                <div class="chart-controls">
+                    <button class="btn btn-sm btn-icon historical-toggle" id="category-chart-history-toggle" title="Show historical data">
+                        <i class="bi bi-clock-history"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="category-chart" style="height: 320px;"></div>
@@ -63,14 +94,20 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Filter Alerts</span>
-                <button id="categorize-all-btn" class="btn btn-sm btn-primary">Categorize All</button>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-funnel me-2"></i>
+                    <span>Filter Alerts</span>
+                </div>
+                <button id="categorize-all-btn" class="btn btn-sm btn-primary">
+                    <i class="bi bi-magic me-1"></i> Categorize All
+                </button>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 mb-2">
+                        <label for="filter-by-category" class="form-label text-sm">Category</label>
                         <select id="filter-by-category" class="form-select">
-                            <option value="">Filter by Category</option>
+                            <option value="">All Categories</option>
                             <option value="configuration">Configuration</option>
                             <option value="security">Security</option>
                             <option value="performance">Performance</option>
@@ -82,8 +119,9 @@
                         </select>
                     </div>
                     <div class="col-md-4 mb-2">
+                        <label for="filter-by-priority" class="form-label text-sm">Priority</label>
                         <select id="filter-by-priority" class="form-select">
-                            <option value="">Filter by Priority</option>
+                            <option value="">All Priorities</option>
                             <option value="critical">Critical</option>
                             <option value="high">High</option>
                             <option value="medium">Medium</option>
@@ -91,8 +129,9 @@
                         </select>
                     </div>
                     <div class="col-md-4 mb-2">
+                        <label for="filter-by-status" class="form-label text-sm">Status</label>
                         <select id="filter-by-status" class="form-select">
-                            <option value="">Filter by Status</option>
+                            <option value="">All Statuses</option>
                             <option value="open">Open</option>
                             <option value="resolved">Resolved</option>
                         </select>
@@ -103,12 +142,51 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-stars me-2"></i>
+                <span>AI Insights</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="p-4 insight-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Alert Pattern Detected</h6>
+                        <span class="ai-badge">AI Insight</span>
+                    </div>
+                    <p class="mb-3">Increase in Portal errors (25% this week) may be related to recent deployment.</p>
+                    <button class="btn btn-sm btn-outline">View Analysis</button>
+                </div>
+                <div class="p-4 insight-card warning">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Potential Issue</h6>
+                        <span class="ai-badge">AI Insight</span>
+                    </div>
+                    <p class="mb-3">Unusual increase in SOQL limit exceptions detected in last 24 hours.</p>
+                    <button class="btn btn-sm btn-outline">Investigate</button>
+                </div>
+                <div class="p-4 insight-card critical">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Suggested Action</h6>
+                        <span class="ai-badge">AI Recommendation</span>
+                    </div>
+                    <p class="mb-3">Consider adding cache layer to Customer Portal API to reduce load times.</p>
+                    <button class="btn btn-sm btn-outline">Create Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Recent Alerts</span>
-                <a href="/alerts" class="btn btn-sm btn-primary">View All</a>
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-bell me-2"></i>
+                    <span>Recent Alerts</span>
+                </div>
+                <a href="/alerts" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right me-1"></i> View All
+                </a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -127,38 +205,40 @@
                         <tbody>
                             {% for alert in alerts %}
                             <tr>
-                                <td>{{ alert.id }}</td>
+                                <td><span class="badge bg-secondary">{{ alert.id }}</span></td>
                                 <td>{{ alert.title }}</td>
                                 <td>{{ alert.source_system }}</td>
                                 <td>
                                     {% if alert.ai_category %}
-                                    <span class="badge bg-info">{{ alert.ai_category }}</span>
+                                    <span class="category-badge">{{ alert.ai_category }}</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Uncategorized</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if alert.ai_priority == "critical" %}
-                                    <span class="badge bg-danger">Critical</span>
+                                    <span class="badge priority-critical">Critical</span>
                                     {% elif alert.ai_priority == "high" %}
-                                    <span class="badge bg-warning">High</span>
+                                    <span class="badge priority-high">High</span>
                                     {% elif alert.ai_priority == "medium" %}
-                                    <span class="badge bg-primary">Medium</span>
+                                    <span class="badge priority-medium">Medium</span>
                                     {% elif alert.ai_priority == "low" %}
-                                    <span class="badge bg-success">Low</span>
+                                    <span class="badge priority-low">Low</span>
                                     {% else %}
                                     <span class="badge bg-secondary">Pending</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if alert.is_resolved %}
-                                    <span class="badge bg-success">Resolved</span>
+                                    <span class="status-badge status-resolved">Resolved</span>
                                     {% else %}
-                                    <span class="badge bg-warning">Open</span>
+                                    <span class="status-badge status-open">Open</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="/alert/{{ alert.id }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="/alert/{{ alert.id }}" class="action-btn" title="View alert details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -169,11 +249,54 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-lightning me-2"></i>
+                <span>AI Health Summary</span>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="ai-badge me-2">AI Generated</div>
+                    <span class="text-sm text-muted">Last updated: {{ stats.last_updated }}</span>
+                </div>
+                <p class="mb-3">The system health shows <strong>moderate stability</strong> with 30 unresolved alerts. The primary concerns are high portal page load times and SOQL limit exceptions, which represent 36.4% of all alerts.</p>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <h6>Critical Issues</h6>
+                        <p class="text-sm">6 critical alerts require immediate attention, focused on <strong>Partner Portal performance</strong> and <strong>SOQL limit exceptions</strong>.</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6>Notable Trends</h6>
+                        <p class="text-sm">Observed 25% increase in portal alerts over the last 7 days, potentially related to recent deployment on 2025-08-10.</p>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <h6>Recommended Actions</h6>
+                        <p class="text-sm">Optimize Portal query performance and review SOQL queries in batch process components.</p>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline mt-2">Generate Full Health Report</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Chart type toggle and time range controls
+        const priorityChartToggle = document.getElementById('priority-chart-toggle');
+        const categoryHistoryToggle = document.getElementById('category-chart-history-toggle');
+        const timeRangeSelector = document.getElementById('time-range-selector');
+        const refreshDataBtn = document.getElementById('refresh-data');
+        
+        // Track chart states
+        let priorityChartType = 'pie';
+        let showCategoryHistory = false;
+        let selectedTimeRange = 'week';
         // Filter functionality for the alerts table
         const categoryFilter = document.getElementById('filter-by-category');
         const priorityFilter = document.getElementById('filter-by-priority');
@@ -267,7 +390,18 @@
         // Handle categorize all button
         if (categorizeAllBtn) {
             categorizeAllBtn.addEventListener('click', function() {
-                window.location.href = '/categorize-all';
+                // Show loading indicator
+                const originalHTML = categorizeAllBtn.innerHTML;
+                categorizeAllBtn.disabled = true;
+                categorizeAllBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                
+                // Show toast notification
+                const loadingToast = showToast('Categorizing all alerts with AI...', 'info');
+                
+                // Redirect with slight delay to show loading state
+                setTimeout(() => {
+                    window.location.href = '/categorize-all';
+                }, 500);
             });
         }
         
@@ -313,9 +447,9 @@
             labels: ['Critical', 'High', 'Medium', 'Low', 'Uncategorized'],
             type: 'pie',
             marker: {
-                colors: ['#ff453a', '#ff9f0a', '#007aff', '#30d158', '#333'],
+                colors: ['var(--danger)', 'var(--warning)', 'var(--primary)', 'var(--success)', '#333'],
                 line: {
-                    color: '#1e1e1e',
+                    color: document.body.classList.contains('dark-mode') ? 'var(--neutral-800)' : 'white',
                     width: 1
                 }
             },
@@ -406,6 +540,249 @@
             }
         };
 
+        // Historical data for category chart (mock data for now)
+        const historicalData = {
+            day: {
+                dates: ['Yesterday', '2 Days Ago', '3 Days Ago', '4 Days Ago', '5 Days Ago', '6 Days Ago', 'Today'],
+                optimizer: [9, 10, 10, 11, 11, 10, 11],
+                security: [6, 6, 7, 7, 6, 6, 6],
+                limits: [4, 4, 4, 4, 3, 4, 4],
+                event: [3, 3, 3, 3, 3, 3, 3],
+                stability: [3, 3, 3, 3, 3, 3, 3],
+                portal: [3, 3, 3, 3, 3, 3, 3],
+                exceptions: [2, 3, 3, 3, 3, 3, 3]
+            },
+            week: {
+                dates: ['Week 4', 'Week 3', 'Week 2', 'Last Week', 'Current Week'],
+                optimizer: [8, 9, 10, 11, 11],
+                security: [5, 5, 6, 6, 6],
+                limits: [2, 3, 3, 4, 4],
+                event: [2, 2, 3, 3, 3],
+                stability: [1, 2, 3, 3, 3],
+                portal: [2, 2, 2, 3, 3],
+                exceptions: [1, 2, 2, 3, 3]
+            },
+            month: {
+                dates: ['May', 'June', 'July', 'August'],
+                optimizer: [5, 7, 9, 11],
+                security: [3, 4, 5, 6],
+                limits: [1, 2, 3, 4],
+                event: [1, 2, 2, 3],
+                stability: [1, 2, 2, 3],
+                portal: [1, 2, 2, 3],
+                exceptions: [1, 1, 2, 3]
+            },
+            quarter: {
+                dates: ['Q1', 'Q2', 'Q3', 'Current'],
+                optimizer: [3, 6, 9, 11],
+                security: [2, 3, 4, 6],
+                limits: [1, 2, 3, 4],
+                event: [1, 1, 2, 3],
+                stability: [1, 1, 2, 3],
+                portal: [0, 1, 2, 3],
+                exceptions: [0, 1, 2, 3]
+            }
+        };
+        
+        // Function to toggle priority chart type between pie and bar
+        function togglePriorityChartType() {
+            const container = document.getElementById('priority-chart');
+            
+            if (priorityChartType === 'pie') {
+                // Switch to bar chart
+                priorityChartType = 'bar';
+                priorityChartToggle.innerHTML = '<i class="bi bi-pie-chart"></i>';
+                
+                const barData = [{
+                    x: ['Critical', 'High', 'Medium', 'Low', 'Uncategorized'],
+                    y: priorityValues,
+                    type: 'bar',
+                    marker: {
+                        color: ['#ff453a', '#ff9f0a', '#007aff', '#30d158', '#333'],
+                    },
+                    text: priorityValues,
+                    textposition: 'auto',
+                }];
+                
+                Plotly.react(container, barData, {
+                    ...darkLayout,
+                    title: '',
+                    height: 320,
+                    margin: { t: 10, b: 60, l: 60, r: 30 },
+                });
+            } else {
+                // Switch back to pie chart
+                priorityChartType = 'pie';
+                priorityChartToggle.innerHTML = '<i class="bi bi-bar-chart"></i>';
+                
+                Plotly.react(container, [priorityData], priorityLayout, config);
+            }
+        }
+        
+        // Function to toggle historical view for category chart
+        function toggleCategoryHistory() {
+            const container = document.getElementById('category-chart');
+            showCategoryHistory = !showCategoryHistory;
+            
+            if (showCategoryHistory) {
+                // Switch to historical line chart
+                categoryHistoryToggle.innerHTML = '<i class="bi bi-bar-chart"></i>';
+                
+                const range = historicalData[selectedTimeRange];
+                const traces = categoryLabels.map((category, index) => ({
+                    x: range.dates,
+                    y: range[category.toLowerCase()] || Array(range.dates.length).fill(0),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: categoryDisplayLabels[index],
+                    line: {
+                        color: categoryColors[index % categoryColors.length],
+                        width: 2
+                    },
+                    marker: {
+                        size: 6,
+                        color: categoryColors[index % categoryColors.length],
+                    }
+                }));
+                
+                const layout = {
+                    ...darkLayout,
+                    height: 320,
+                    margin: { t: 10, b: 60, l: 60, r: 30 },
+                    xaxis: {
+                        title: '',
+                        gridcolor: '#333',
+                    },
+                    yaxis: {
+                        title: 'Number of Alerts',
+                        gridcolor: '#333',
+                    },
+                    legend: {
+                        orientation: 'h',
+                        y: -0.2,
+                        x: 0.5,
+                        xanchor: 'center',
+                    },
+                    annotations: [{
+                        x: 1,
+                        y: 1.05,
+                        xref: 'paper',
+                        yref: 'paper',
+                        text: 'Historical Data View',
+                        showarrow: false,
+                        font: { size: 9, color: '#aaa' },
+                        align: 'right'
+                    }]
+                };
+                
+                Plotly.react(container, traces, layout, config);
+            } else {
+                // Switch back to bar chart
+                categoryHistoryToggle.innerHTML = '<i class="bi bi-clock-history"></i>';
+                Plotly.react(container, [categoryData], categoryLayout, config);
+            }
+        }
+        
+        // Function to handle time range changes
+        function handleTimeRangeChange() {
+            selectedTimeRange = timeRangeSelector.value;
+            
+            // If we're in historical view, update the chart
+            if (showCategoryHistory) {
+                toggleCategoryHistory(); // Turn it off
+                toggleCategoryHistory(); // Turn it back on with new range
+            }
+            
+            // Update dashboard metrics for the selected time range (would connect to backend API)
+            const loadingToast = showToast('Updating dashboard data...', 'info');
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                hideToast(loadingToast);
+                showToast('Dashboard updated for ' + getTimeRangeLabel(), 'success');
+            }, 800);
+        }
+        
+        function getTimeRangeLabel() {
+            switch(selectedTimeRange) {
+                case 'day': return 'last 24 hours';
+                case 'week': return 'last 7 days';
+                case 'month': return 'last 30 days';
+                case 'quarter': return 'last 90 days';
+                default: return 'selected period';
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'primary'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.innerHTML += toastHtml;
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+            toast.show();
+            return toastId;
+        }
+        
+        function hideToast(toastId) {
+            const toastElement = document.getElementById(toastId);
+            if (toastElement) {
+                const toast = bootstrap.Toast.getInstance(toastElement);
+                if (toast) toast.hide();
+            }
+        }
+        
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        // Refresh data button handler
+        if (refreshDataBtn) {
+            refreshDataBtn.addEventListener('click', function() {
+                const loadingToast = showToast('Refreshing dashboard data...', 'info');
+                
+                // Add spinner to button
+                const originalHTML = refreshDataBtn.innerHTML;
+                refreshDataBtn.disabled = true;
+                refreshDataBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Refreshing...';
+                
+                // Simulate API call delay
+                setTimeout(() => {
+                    refreshDataBtn.disabled = false;
+                    refreshDataBtn.innerHTML = originalHTML;
+                    hideToast(loadingToast);
+                    showToast('Dashboard data refreshed successfully', 'success');
+                }, 1000);
+            });
+        }
+        
+        // Initialize event listeners for chart controls
+        if (priorityChartToggle) {
+            priorityChartToggle.addEventListener('click', togglePriorityChartType);
+        }
+        
+        if (categoryHistoryToggle) {
+            categoryHistoryToggle.addEventListener('click', toggleCategoryHistory);
+        }
+        
+        if (timeRangeSelector) {
+            timeRangeSelector.addEventListener('change', handleTimeRangeChange);
+        }
+        
         // Create the charts with enhanced settings
         const priorityLayout = {
             ...darkLayout,

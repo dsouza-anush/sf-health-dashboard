@@ -5,6 +5,7 @@
   --primary: #0070f3;
   --primary-hover: #005cc8;
   --primary-light: #e1ebfe;
+  --primary-dark: #0040a8;
   --secondary: #f5f5f7;
   --neutral-50: #fafafa;
   --neutral-100: #f4f4f5;
@@ -16,15 +17,29 @@
   --neutral-700: #3f3f46;
   --neutral-800: #27272a;
   --neutral-900: #18181b;
-  /* Status colors */
+  
+  /* Status colors - harmonized with main palette */
   --success: #10b981;
   --success-light: #d1fae5;
+  --success-dark: #047857;
   --warning: #f59e0b;
   --warning-light: #fef3c7;
+  --warning-dark: #b45309;
   --danger: #ef4444;
   --danger-light: #fee2e2;
+  --danger-dark: #b91c1c;
   --info: #3b82f6;
   --info-light: #dbeafe;
+  --info-dark: #1d4ed8;
+  
+  /* Categorical colors for visualizations */
+  --cat-blue: #0070f3;
+  --cat-orange: #f59e0b;
+  --cat-red: #ef4444;
+  --cat-green: #10b981;
+  --cat-purple: #8b5cf6;
+  --cat-teal: #14b8a6;
+  --cat-pink: #ec4899;
   
   /* Typography - improved font stack and weights */
   --font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -371,6 +386,68 @@ p {
   border-right: none;
 }
 
+/* Chart controls */
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--neutral-500);
+  border: 1px solid var(--neutral-300);
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background-color: var(--neutral-100);
+  color: var(--primary);
+  border-color: var(--neutral-400);
+}
+
+.btn-icon.active {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.dark-mode .btn-icon {
+  color: var(--neutral-400);
+  border-color: var(--neutral-700);
+}
+
+.dark-mode .btn-icon:hover {
+  background-color: var(--neutral-800);
+  color: var(--primary);
+  border-color: var(--neutral-600);
+}
+
+.dark-mode .btn-icon.active {
+  background-color: rgba(0, 112, 243, 0.2);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Chart time range selector */
+.chart-time-range {
+  width: 150px;
+}
+
+.chart-time-range .form-select {
+  font-size: 0.875rem;
+  height: 32px;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
 /* Form elements */
 .form-control {
   display: block;
@@ -636,20 +713,34 @@ p {
   border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
 }
 
+.analysis-header h5 {
+  font-weight: var(--font-weight-semibold);
+  color: white;
+}
+
 .analysis-result-section {
   margin-bottom: var(--space-6);
+  position: relative;
 }
 
 .analysis-result-label {
   color: var(--neutral-500);
-  font-size: 0.875rem;
-  margin-bottom: var(--space-1);
-  font-weight: var(--font-weight-medium);
+  font-size: 0.75rem;
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .analysis-result-content {
   color: var(--neutral-900);
   font-size: 1rem;
+  line-height: 1.6;
+  padding: var(--space-1) 0;
+}
+
+.dark-mode .analysis-header {
+  background: linear-gradient(90deg, var(--primary), #1e40af);
 }
 
 .dark-mode .analysis-result-label {
@@ -658,6 +749,55 @@ p {
 
 .dark-mode .analysis-result-content {
   color: var(--neutral-100);
+}
+
+/* AI Badge Styling */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  font-size: 0.75rem;
+  background-color: rgba(0, 112, 243, 0.1);
+  color: var(--primary);
+}
+
+.dark-mode .ai-badge {
+  background-color: rgba(0, 112, 243, 0.2);
+  color: #60a5fa;
+}
+
+/* Insight Cards */
+.insight-card {
+  border-left: 3px solid var(--primary);
+  padding: var(--space-3);
+  background-color: rgba(0, 112, 243, 0.05);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  margin-bottom: var(--space-4);
+}
+
+.insight-card.warning {
+  border-left-color: var(--warning);
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.insight-card.critical {
+  border-left-color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.dark-mode .insight-card {
+  background-color: rgba(0, 112, 243, 0.1);
+}
+
+.dark-mode .insight-card.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.dark-mode .insight-card.critical {
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Spinner/loading indicators */
@@ -693,17 +833,46 @@ p {
   color: var(--primary) !important;
 }
 
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+a.nav-link {
+  text-decoration: none;
+}
+
 .dark-mode a {
   color: var(--primary);
 }
 
-.dark-mode .table td a {
-  color: var(--primary);
+.table td a {
+  color: var(--neutral-700);
   text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: all 0.2s ease;
+}
+
+.table td a:hover {
+  color: var(--primary);
+  border-bottom: 1px solid var(--primary);
+}
+
+.dark-mode .table td a {
+  color: var(--neutral-300);
+  border-bottom: 1px solid transparent;
 }
 
 .dark-mode .table td a:hover {
-  text-decoration: underline;
+  color: var(--primary);
+  border-bottom: 1px solid var(--primary);
 }
 
 /* Status badges for alerts */
