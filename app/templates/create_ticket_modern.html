@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Health Alert - Salesforce Health Check{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/create_ticket_modern.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <!-- Modern breadcrumb -->
+    <ul class="modern-breadcrumb">
+        <li class="modern-breadcrumb-item">
+            <a href="/" class="modern-breadcrumb-link">Dashboard</a>
+        </li>
+        <li class="modern-breadcrumb-item">
+            <a href="/alerts" class="modern-breadcrumb-link">Alerts</a>
+        </li>
+        <li class="modern-breadcrumb-item active">Create New Alert</li>
+    </ul>
+
+    <div class="create-ticket-container">
+        <!-- Form Column -->
+        <div class="create-ticket-form-column">
+            <div class="modern-form-card">
+                <div class="modern-card-header">
+                    <h5>Create New Health Alert</h5>
+                </div>
+                <div class="modern-card-body">
+                    <form id="create-alert-form">
+                        <div class="modern-form-group">
+                            <label for="title" class="modern-form-label">Title</label>
+                            <input type="text" class="modern-form-control" id="title" name="title" required>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label for="description" class="modern-form-label">Description</label>
+                            <textarea class="modern-form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="modern-form-row modern-form-group">
+                            <div class="modern-form-column">
+                                <label for="category" class="modern-form-label">Category</label>
+                                <select class="modern-form-control modern-form-select" id="category" name="category" required>
+                                    <option value="" selected disabled>Select a category</option>
+                                    <option value="optimizer">Optimizer</option>
+                                    <option value="security">Security</option>
+                                    <option value="limits">Limits</option>
+                                    <option value="event">Event</option>
+                                    <option value="stability">Stability</option>
+                                    <option value="portal">Portal</option>
+                                    <option value="exceptions">Exceptions</option>
+                                </select>
+                            </div>
+                            <div class="modern-form-column">
+                                <label for="source_system" class="modern-form-label">Source System</label>
+                                <select class="modern-form-control modern-form-select" id="source_system" name="source_system" required>
+                                    <option value="" selected disabled>Select source system</option>
+                                    <option value="Salesforce Optimizer">Salesforce Optimizer</option>
+                                    <option value="Salesforce Security Health">Salesforce Security Health</option>
+                                    <option value="Salesforce Limits Health">Salesforce Limits Health</option>
+                                    <option value="Splunk Event Health">Splunk Event Health</option>
+                                    <option value="ServiceNow">ServiceNow</option>
+                                    <option value="Salesforce Portal Health">Salesforce Portal Health</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="modern-form-group">
+                            <label for="raw_data" class="modern-form-label">Raw Data (Optional)</label>
+                            <textarea class="modern-form-control" id="raw_data" name="raw_data" rows="3"></textarea>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                            <button type="button" class="modern-btn modern-btn-outline" onclick="window.location.href='/alerts'">Cancel</button>
+                            <button type="submit" id="create-btn" class="modern-btn modern-btn-primary">Create & Categorize</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Column -->
+        <div class="create-ticket-info-column">
+            <div class="ai-info-card modern-form-card">
+                <div class="ai-info-header">
+                    <h5>AI Insights</h5>
+                </div>
+                <div class="ai-info-body">
+                    <p>Click "Create & Categorize" to have the AI analyze your alert and provide:</p>
+                    <ul>
+                        <li>The most appropriate category</li>
+                        <li>Priority level based on impact</li>
+                        <li>Concise summary of the issue</li>
+                        <li>Recommended actions</li>
+                    </ul>
+                    <div class="ai-info-alert">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                        </svg>
+                        <p class="ai-info-alert-text">
+                            The Heroku AI agent analyzes and categorizes health alerts in real-time for improved incident response.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Analysis Results (initially hidden) -->
+            <div id="analysis-result" class="analysis-result-card modern-form-card mt-4 d-none">
+                <div class="analysis-header-modern">
+                    <h5>AI Analysis Results</h5>
+                </div>
+                <div class="analysis-body-modern">
+                    <!-- Loading state -->
+                    <div id="analysis-loading" class="modern-loading">
+                        <div class="modern-spinner"></div>
+                        <p class="modern-loading-text">Analyzing with Heroku AI...</p>
+                    </div>
+
+                    <!-- Results content (initially hidden) -->
+                    <div id="analysis-content" class="d-none">
+                        <div class="modern-form-row" style="margin-bottom: 24px;">
+                            <div class="modern-form-column">
+                                <div class="modern-analysis-label">Category</div>
+                                <span id="ai-category" class="modern-badge modern-badge-category">Security</span>
+                            </div>
+                            <div class="modern-form-column">
+                                <div class="modern-analysis-label">Priority</div>
+                                <span id="ai-priority" class="modern-badge modern-badge-priority">High</span>
+                            </div>
+                        </div>
+                        
+                        <div class="modern-analysis-section">
+                            <div class="modern-analysis-label">Summary</div>
+                            <p id="ai-summary" class="modern-analysis-content">Analysis summary will appear here.</p>
+                        </div>
+                        
+                        <div class="modern-analysis-section">
+                            <div class="modern-analysis-label">Recommendation</div>
+                            <p id="ai-recommendation" class="modern-analysis-content">Recommendations will appear here.</p>
+                        </div>
+                    </div>
+
+                    <!-- Error state (initially hidden) -->
+                    <div id="analysis-error" class="d-none">
+                        <div class="modern-error-alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <p id="error-message" class="modern-error-message">Failed to analyze alert. Please try again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('create-alert-form');
+        const createBtn = document.getElementById('create-btn');
+        const analysisResult = document.getElementById('analysis-result');
+        const analysisLoading = document.getElementById('analysis-loading');
+        const analysisContent = document.getElementById('analysis-content');
+        const analysisError = document.getElementById('analysis-error');
+        
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            createBtn.disabled = true;
+            createBtn.innerHTML = '<div class="modern-spinner" style="width: 16px; height: 16px; margin: 0 8px 0 0;"></div> Processing...';
+            
+            // Show the analysis result card with loading state
+            analysisResult.classList.remove('d-none');
+            analysisResult.classList.add('show');
+            analysisLoading.classList.remove('d-none');
+            analysisContent.classList.add('d-none');
+            analysisError.classList.add('d-none');
+            
+            // Collect form data
+            const formData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                source_system: document.getElementById('source_system').value,
+                raw_data: document.getElementById('raw_data').value || null
+            };
+            
+            try {
+                // Create and categorize the alert
+                const response = await fetch('/api/alerts/create-and-categorize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.detail || 'Failed to create alert');
+                }
+                
+                // Update UI with the result
+                document.getElementById('ai-category').textContent = result.ai_category || 'Not categorized';
+                
+                // Set priority badge styling
+                const priorityBadge = document.getElementById('ai-priority');
+                priorityBadge.textContent = result.ai_priority || 'Unknown';
+                
+                // Set priority badge color
+                const priorityClass = 'modern-badge-priority';
+                priorityBadge.className = 'modern-badge';
+                
+                if (result.ai_priority) {
+                    if (result.ai_priority === 'critical') {
+                        priorityBadge.classList.add('modern-badge-critical');
+                    } else if (result.ai_priority === 'high') {
+                        priorityBadge.classList.add('modern-badge-high');
+                    } else if (result.ai_priority === 'medium') {
+                        priorityBadge.classList.add('modern-badge-medium');
+                    } else if (result.ai_priority === 'low') {
+                        priorityBadge.classList.add('modern-badge-low');
+                    } else {
+                        priorityBadge.classList.add(priorityClass);
+                    }
+                } else {
+                    priorityBadge.classList.add(priorityClass);
+                }
+                
+                document.getElementById('ai-summary').textContent = result.ai_summary || 'No summary available';
+                document.getElementById('ai-recommendation').textContent = result.ai_recommendation || 'No recommendations available';
+                
+                // Hide loading, show content
+                analysisLoading.classList.add('d-none');
+                analysisContent.classList.remove('d-none');
+                
+                // Reset button state
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create & Categorize';
+                
+                // Scroll to results
+                analysisResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+            } catch (error) {
+                // Show error message
+                analysisLoading.classList.add('d-none');
+                analysisError.classList.remove('d-none');
+                document.getElementById('error-message').textContent = error.message || 'Failed to analyze alert. Please try again.';
+                
+                // Reset button state
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create & Categorize';
+                
+                console.error('Error:', error);
+            }
+        });
+    });
+</script>
+{% endblock %}

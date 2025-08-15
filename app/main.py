@@ -135,7 +135,7 @@ async def create_ticket_page(request: Request):
     """Render the create ticket page with AI categorization demo."""
     try:
         return templates.TemplateResponse(
-            "create_ticket.html",
+            "create_ticket_modern.html",
             {"request": request}
         )
     except Exception as e:
