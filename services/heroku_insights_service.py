@@ -167,43 +167,54 @@ class HerokuInsightsService:
                     # Handle SSE (Server-Sent Events) response
                     if "text/event-stream" in content_type:
                         try:
-                            # Process SSE stream according to format in documentation
-                            buffer = ""
-                            current_event = None
-                            current_data = ""
+                            # Process SSE stream according to the actual format
                             final_message = None
-
-                            async for line in response.content:
-                                line = line.decode('utf-8').rstrip('\n')
-                                
-                                # Empty line marks the end of an event
-                                if not line.strip():
-                                    if current_event == "message" and current_data:
-                                        try:
-                                            data = json.loads(current_data)
-                                            
-                                            # Check for final completion message
-                                            if "object" in data and data["object"] == "chat.completion" and data.get("choices"):
-                                                for choice in data["choices"]:
-                                                    if choice.get("finish_reason") == "stop" and choice.get("message", {}).get("content"):
-                                                        final_message = choice["message"]["content"]
-                                                        logger.info(f"Found final completion message: {len(final_message)} chars")
-                                                        
-                                        except json.JSONDecodeError as e:
-                                            logger.debug(f"Invalid JSON in event: {e}")
-                                    
-                                    # Reset for next event
-                                    current_event = None
-                                    current_data = ""
+                            
+                            # Read the entire response content
+                            content = await response.read()
+                            content_str = content.decode('utf-8')
+                            
+                            # Split into events based on double newlines
+                            events = content_str.strip().split('\n\n')
+                            
+                            for event_block in events:
+                                if not event_block.strip():
                                     continue
+                                    
+                                lines = event_block.strip().split('\n')
+                                event_type = None
+                                event_data = None
                                 
-                                # Parse the event line
-                                if line.startswith("event:"):
-                                    current_event = line[6:].strip()
-                                elif line.startswith("data:"):
-                                    current_data = line[5:].strip()
-                                elif line == "event:done":
-                                    logger.info("Received event:done marker, stream complete")
+                                # Parse event type and data
+                                for line in lines:
+                                    if line.startswith('event:'):
+                                        event_type = line[6:].strip()
+                                    elif line.startswith('data:'):
+                                        event_data = line[5:].strip()
+                                
+                                # Process message events
+                                if event_type == "message" and event_data:
+                                    try:
+                                        data = json.loads(event_data)
+                                        
+                                        # Look for chat completion with stop reason
+                                        if (data.get("object") == "chat.completion" and 
+                                            data.get("choices")):
+                                            
+                                            for choice in data["choices"]:
+                                                if (choice.get("finish_reason") == "stop" and 
+                                                    choice.get("message", {}).get("content")):
+                                                    final_message = choice["message"]["content"]
+                                                    logger.info(f"Found final completion message: {len(final_message)} chars")
+                                                    break
+                                                    
+                                    except json.JSONDecodeError as e:
+                                        logger.debug(f"Invalid JSON in event data: {e}")
+                                        logger.debug(f"Event data: {event_data[:200]}...")
+                                        continue
+                                        
+                                elif event_type == "done":
+                                    logger.info("Received done event, stream complete")
                                     break
                             
                             # Use the final completion message as our AI text
@@ -236,28 +247,41 @@ class HerokuInsightsService:
             try:
                 if last_ai_text:
                     # Try to parse JSON from the AI response
-                    # Look for JSON content within the response
-                    json_start = last_ai_text.find('{')
-                    json_end = last_ai_text.rfind('}') + 1
-                    
-                    if json_start >= 0 and json_end > json_start:
-                        json_content = last_ai_text[json_start:json_end]
-                        try:
-                            insights_data = json.loads(json_content)
-                            
-                            # Add metadata
-                            insights_data["generated_at"] = datetime.now().isoformat()
-                            insights_data["time_range"] = time_range
-                            
-                            return insights_data
-                        except json.JSONDecodeError as e:
-                            logger.error(f"Failed to parse JSON from AI response: {str(e)}")
-                            logger.debug(f"JSON content attempted to parse: {json_content}")
+                    # First attempt to parse the entire response as JSON
+                    try:
+                        # Try direct JSON parsing first
+                        insights_data = json.loads(last_ai_text)
+                        
+                        # Add metadata
+                        insights_data["generated_at"] = datetime.now().isoformat()
+                        insights_data["time_range"] = time_range
+                        insights_data["is_fallback"] = False
+                        
+                        return insights_data
+                    except json.JSONDecodeError:
+                        # If direct parsing fails, look for JSON content within the response
+                        json_start = last_ai_text.find('{')
+                        json_end = last_ai_text.rfind('}') + 1
+                        
+                        if json_start >= 0 and json_end > json_start:
+                            json_content = last_ai_text[json_start:json_end]
+                            try:
+                                insights_data = json.loads(json_content)
+                                
+                                # Add metadata
+                                insights_data["generated_at"] = datetime.now().isoformat()
+                                insights_data["time_range"] = time_range
+                                insights_data["is_fallback"] = False
+                                
+                                return insights_data
+                            except json.JSONDecodeError as e:
+                                logger.error(f"Failed to parse JSON from AI response: {str(e)}")
+                                logger.debug(f"JSON content attempted to parse: {json_content}")
+                                return self._get_fallback_insights()
+                        else:
+                            logger.error("Could not find JSON content in AI response")
+                            logger.debug(f"AI response received: {last_ai_text[:200]}...")
                             return self._get_fallback_insights()
-                    else:
-                        logger.error("Could not find JSON content in AI response")
-                        logger.debug(f"AI response received: {last_ai_text[:200]}...")
-                        return self._get_fallback_insights()
                 else:
                     logger.error("No AI text response was extracted from the Heroku Agents API")
                     return self._get_fallback_insights()
