@@ -1,14 +1,14 @@
 # Salesforce Health Check Dashboard
 
-A web application that consolidates health metrics from various Salesforce systems, categorizes issues using Claude AI, enables proactive resolution of potential problems with Slack notifications and JIRA ticket creation.
+A modern web application that consolidates health metrics from various Salesforce systems, categorizes issues using AI, and enables proactive resolution of potential problems with Slack notifications and JIRA ticket creation.
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/yourusername/sf-health-dashboard)
 
 ## Product Requirements
 
-### MVP Features
-- Dashboard displaying health metrics from mock data sources
-- AI-powered categorization of health issues using Claude 4 Sonnet
+### Features
+- Dashboard displaying health metrics from various data sources
+- AI-powered categorization of health issues
 - Issue prioritization based on potential impact
 - Actionable recommendations for issue resolution
 - Basic filtering and search capabilities
@@ -16,7 +16,7 @@ A web application that consolidates health metrics from various Salesforce syste
 
 ### Implemented Features
 - Dashboard displaying health metrics from mock data sources
-- AI-powered categorization of health issues using Claude AI
+- AI-powered categorization of health issues
 - Issue prioritization based on potential impact
 - Actionable recommendations for issue resolution
 - Slack notification integration for high/critical priority alerts
@@ -74,10 +74,10 @@ A web application that consolidates health metrics from various Salesforce syste
 1. **FastAPI Backend**
    - RESTful API endpoints for data access
    - Business logic for health metrics processing
-   - Integration with Claude AI via Heroku Inference
+   - Integration with Heroku Inference API
 
-2. **Pydantic AI Integration**
-   - Uses Heroku's Claude-4-Sonnet integration
+2. **AI Integration**
+   - Uses Heroku Inference API for AI processing
    - Processes health alerts through structured schemas
    - Generates categorization, priority, and recommendations
 
@@ -104,7 +104,7 @@ A web application that consolidates health metrics from various Salesforce syste
 ## Technologies Used
 
 - **Backend**: Python, FastAPI, SQLAlchemy, Pydantic
-- **AI**: Claude AI via Heroku Inference API
+- **AI**: Heroku Inference API
 - **Database**: PostgreSQL
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap 5, Plotly
 - **Integrations**: Slack API, JIRA API
@@ -183,7 +183,6 @@ heroku run python -c "from database.seed import seed_database; seed_database()"
 
 ## Important Links
 
-- [Pydantic AI Documentation](https://ai.pydantic.dev/models/openai/#heroku-ai)
 - [Heroku Inference API Documentation](https://devcenter.heroku.com/articles/heroku-inference-api-v1-chat-completions)
 - [Slack API Documentation](https://api.slack.com/messaging/webhooks)
 - [JIRA API Documentation](https://developer.atlassian.com/server/jira/platform/rest-apis/)

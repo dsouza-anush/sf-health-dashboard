@@ -29,6 +29,9 @@ ENV/
 .env.*
 !.env.example
 
+# Claude specific files
+CLAUDE.md
+
 # IDE files
 .idea/
 .vscode/
