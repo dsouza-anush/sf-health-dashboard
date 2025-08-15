@@ -32,7 +32,7 @@ class HerokuInsightsService:
         
         # Use COBALT database which is a follower database (required by Heroku Agents API)
         # Do not use the URL directly - instead use the attachment name which Heroku Agents API expects
-        self.db_attachment = "HEROKU_POSTGRESQL_COBALT" 
+        self.db_attachment = "HEROKU_POSTGRESQL_COBALT"
         self.is_follower_db = True  # COBALT is a follower database
         
         # Check for required configuration
