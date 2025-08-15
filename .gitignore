@@ -59,4 +59,4 @@ logs/
 
 # Local development
 *.sqlite3
-*.db
+*.db.env
