@@ -1,25 +1,60 @@
 {
-  "name": "Salesforce Health Check Dashboard",
-  "description": "A web application that consolidates Salesforce health metrics and uses Claude AI to categorize issues",
+  "name": "Salesforce Health Dashboard",
+  "description": "A health monitoring dashboard for Salesforce systems with AI-powered categorization, Slack notifications, and JIRA integration",
   "keywords": [
     "python",
     "fastapi",
     "salesforce",
     "claude",
     "ai",
-    "pydantic"
+    "pydantic",
+    "slack",
+    "jira"
   ],
   "repository": "https://github.com/yourusername/sf-health-agent",
   "success_url": "/",
   "env": {
     "HEROKU_INFERENCE_API_KEY": {
-      "description": "API key for Heroku Inference API",
+      "description": "API key for Claude via Heroku Inference API",
       "required": true
+    },
+    "SLACK_API_KEY": {
+      "description": "API key for Slack integration",
+      "required": false
+    },
+    "SLACK_ALERTS_CHANNEL": {
+      "description": "Slack channel to send alerts to",
+      "value": "#sf-health-alerts",
+      "required": false
+    },
+    "APP_HOST": {
+      "description": "Host URL for alert detail links in Slack messages",
+      "required": false
+    },
+    "JIRA_API_TOKEN": {
+      "description": "API token for JIRA integration",
+      "required": false
+    },
+    "JIRA_DOMAIN": {
+      "description": "JIRA instance URL (e.g., https://your-company.atlassian.net)",
+      "required": false
+    },
+    "JIRA_EMAIL": {
+      "description": "Email address associated with JIRA account",
+      "required": false
+    },
+    "JIRA_PROJECT_KEY": {
+      "description": "Project key for JIRA tickets",
+      "value": "SF",
+      "required": false
     }
   },
   "addons": [
     {
       "plan": "heroku-postgresql:mini"
+    },
+    {
+      "plan": "heroku-inference"
     }
   ],
   "buildpacks": [
