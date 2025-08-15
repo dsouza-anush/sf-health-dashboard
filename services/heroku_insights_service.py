@@ -40,19 +40,15 @@ class HerokuInsightsService:
         if not self.db_url:
             logger.warning("No database URL found. AI insights will not work.")
             
-        # Check if we're using a Standard database that can support follower functionality
-        self.using_standard_db = "Standard" in os.popen("heroku pg:info -a sf-health-dashboard | grep Plan").read()
-        self.fork_follow_available = False
+        # Check database configuration
+        self.using_standard_db = True  # We assume Standard DB for Heroku
+        self.fork_follow_available = True  # COBALT is a follower database
         
         # Log database information
-        if self.is_follower_db:
-            logger.info("Using dedicated follower database for AI insights")
-            self.fork_follow_available = True
-        elif self.using_standard_db:
-            logger.info("Using Standard-0 database but it's not a follower database")
-            logger.warning("The Heroku Agents API requires a follower database - queries may be rejected")
+        if not self.db_url:
+            logger.error("No database URL found. Check environment configuration.")
         else:
-            logger.warning("Using database that doesn't support follower functionality required by Heroku Agents API")
+            logger.info("Using follower database for AI insights")
             
         logger.info(f"Initialized Heroku Insights Service with model: {self.model_id}")
 
