@@ -42,9 +42,16 @@ def ping_connection(connection, branch):
         # Don't ping on sub-connections (e.g., inside transactions)
         return
 
+    # Check if connection already has an active transaction
+    if connection.in_transaction():
+        # Skip the ping for connections with active transactions
+        logger.info("Connection already in transaction, skipping ping")
+        return
+        
     # Perform a simple query to verify connection is still valid
     try:
-        connection.scalar(text("SELECT 1"))
+        # Execute raw SQL rather than using scalar to avoid transaction issues
+        connection.execute(text("SELECT 1"))
     except Exception as e:
         # Recycle the connection if there's an issue
         logger.warning(f"Connection ping failed, recycling connection: {str(e)}")
