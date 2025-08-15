@@ -127,8 +127,11 @@ For manual deployment:
 # Create Heroku app
 heroku create sf-health-agent
 
-# Add PostgreSQL addon
-heroku addons:create heroku-postgresql:mini -a sf-health-agent
+# Add PostgreSQL addon - Standard-0 plan required for follower DB support
+heroku addons:create heroku-postgresql:standard-0 -a sf-health-agent
+
+# Create follower database for AI insights (required for Heroku Agents API)
+heroku addons:create heroku-postgresql:standard-0 -a sf-health-agent -- --follow DATABASE_URL
 
 # Add Claude AI Inference addon
 heroku addons:create heroku-inference -a sf-health-agent -- --region=us
@@ -146,7 +149,12 @@ git push heroku main
 
 # Seed the database with initial data
 heroku run python -c "from database.seed import seed_database; seed_database()"
+
+# Access the application
+heroku open
 ```
+
+> **Note:** The AI insights feature requires a follower database setup. If you're using the "Deploy to Heroku" button, you'll need to create a follower database manually after deployment.
 
 ## Local Development
 
