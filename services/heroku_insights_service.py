@@ -37,8 +37,6 @@ class HerokuInsightsService:
             logger.warning("No inference API key found. AI insights will not work.")
         if not self.app_name:
             logger.warning("No Heroku app name found. AI insights will not work.")
-        if not self.db_url:
-            logger.warning("No database URL found. AI insights will not work.")
             
         # Check database configuration
         self.using_standard_db = True  # We assume Standard DB for Heroku
