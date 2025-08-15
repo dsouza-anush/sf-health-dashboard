@@ -20,9 +20,6 @@
   "addons": [
     {
       "plan": "heroku-postgresql:mini"
-    },
-    {
-      "plan": "heroku-inference:claude-4-sonnet"
     }
   ],
   "buildpacks": [

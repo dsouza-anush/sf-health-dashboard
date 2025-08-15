@@ -1,10 +1,15 @@
+import json
+import logging
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from database.models import HealthAlert as DBHealthAlert, HealthCategory
 from models.schemas import HealthAlertCreate, HealthAlertUpdate, HealthAlert as SchemaHealthAlert
 from services.ai_service import categorize_health_alert
-import json
+
+# Set up logger
+logger = logging.getLogger(__name__)
 
 async def get_alerts(db: Session, skip: int = 0, limit: int = 100) -> List[SchemaHealthAlert]:
     """Get a list of health alerts from the database."""
@@ -78,63 +83,100 @@ async def mark_alert_resolved(db: Session, alert_id: int, resolved: bool = True)
 
 async def categorize_alert(db: Session, alert_id: int) -> Optional[SchemaHealthAlert]:
     """Categorize a health alert using the AI service."""
-    db_alert = db.query(DBHealthAlert).filter(DBHealthAlert.id == alert_id).first()
-    if not db_alert:
-        return None
-    
-    # Convert to schema for AI processing
-    alert_schema = SchemaHealthAlert.model_validate(db_alert)
-    
-    # Get AI categorization
-    ai_result = await categorize_health_alert(alert_schema)
-    
-    # Clean up and normalize results
-    category = ai_result.category.strip().lower()
-    # Map to one of our standard categories if needed
-    standard_categories = ["configuration", "security", "performance", "data", 
-                          "integration", "compliance", "code", "user experience"]
-    
-    # Find the closest matching category if needed
-    if category not in standard_categories:
-        for std_cat in standard_categories:
-            if std_cat in category:
-                category = std_cat
-                break
-        else:
-            # Default to configuration if no match found
-            category = "configuration" 
-    
-    # Update the database record with AI results
-    db_alert.ai_category = category
-    db_alert.ai_priority = ai_result.priority
-    db_alert.ai_summary = ai_result.summary
-    db_alert.ai_recommendation = ai_result.recommendation
-    
-    db.commit()
-    db.refresh(db_alert)
-    return SchemaHealthAlert.model_validate(db_alert)
+    try:
+        # Get the alert by ID
+        db_alert = db.query(DBHealthAlert).filter(DBHealthAlert.id == alert_id).first()
+        if not db_alert:
+            logger.warning(f"Alert not found for categorization: ID {alert_id}")
+            return None
+        
+        logger.info(f"Categorizing alert {alert_id}: {db_alert.title}")
+        
+        # Convert to schema for AI processing
+        alert_schema = SchemaHealthAlert.model_validate(db_alert)
+        
+        # Get AI categorization
+        ai_result = await categorize_health_alert(alert_schema)
+        
+        # Clean up and normalize results
+        category = ai_result.category.strip().lower()
+        
+        # Map to one of our standard categories if needed
+        standard_categories = ["configuration", "security", "performance", "data", 
+                            "integration", "compliance", "code", "user experience"]
+        
+        # Find the closest matching category if needed
+        if category not in standard_categories:
+            logger.debug(f"Non-standard category received: {category}, finding closest match")
+            for std_cat in standard_categories:
+                if std_cat in category:
+                    category = std_cat
+                    logger.debug(f"Mapped to standard category: {category}")
+                    break
+            else:
+                # Default to configuration if no match found
+                logger.debug(f"No match found, using default category 'configuration'")
+                category = "configuration" 
+        
+        # Update the database record with AI results
+        db_alert.ai_category = category
+        db_alert.ai_priority = ai_result.priority
+        db_alert.ai_summary = ai_result.summary
+        db_alert.ai_recommendation = ai_result.recommendation
+        db_alert.updated_at = datetime.utcnow()  # Update timestamp
+        
+        db.commit()
+        db.refresh(db_alert)
+        
+        logger.info(f"Alert {alert_id} categorized as {category} with {ai_result.priority} priority")
+        return SchemaHealthAlert.model_validate(db_alert)
+    except Exception as e:
+        logger.error(f"Error categorizing alert {alert_id}: {str(e)}")
+        db.rollback()  # Roll back transaction on error
+        raise  # Re-raise to be handled at API level
 
 async def categorize_all_uncategorized(db: Session) -> int:
     """Categorize all health alerts that haven't been categorized yet."""
-    uncategorized = db.query(DBHealthAlert).filter(DBHealthAlert.ai_category.is_(None)).all()
-    count = 0
-    
-    for alert in uncategorized:
-        alert_schema = SchemaHealthAlert.model_validate(alert)
-        try:
-            ai_result = await categorize_health_alert(alert_schema)
-            
-            # Update the database record with AI results
-            alert.ai_category = ai_result.category
-            alert.ai_priority = ai_result.priority
-            alert.ai_summary = ai_result.summary
-            alert.ai_recommendation = ai_result.recommendation
-            count += 1
-        except Exception as e:
-            print(f"Error categorizing alert {alert.id}: {str(e)}")
-    
-    db.commit()
-    return count
+    try:
+        # Get all uncategorized alerts
+        uncategorized = db.query(DBHealthAlert).filter(DBHealthAlert.ai_category.is_(None)).all()
+        logger.info(f"Found {len(uncategorized)} uncategorized alerts")
+        
+        count = 0
+        errors = 0
+        
+        # Process each alert individually
+        for alert in uncategorized:
+            alert_schema = SchemaHealthAlert.model_validate(alert)
+            try:
+                # Get AI categorization for this alert
+                ai_result = await categorize_health_alert(alert_schema)
+                
+                # Update the database record with AI results
+                alert.ai_category = ai_result.category
+                alert.ai_priority = ai_result.priority
+                alert.ai_summary = ai_result.summary
+                alert.ai_recommendation = ai_result.recommendation
+                alert.updated_at = datetime.utcnow()  # Update timestamp
+                count += 1
+                
+                # Commit each update individually to avoid losing all work if one fails
+                db.commit()
+                logger.info(f"Categorized alert {alert.id}: {alert.title}")
+                
+            except Exception as e:
+                # Log error but continue processing other alerts
+                logger.error(f"Error categorizing alert {alert.id}: {str(e)}")
+                db.rollback()  # Roll back failed transaction
+                errors += 1
+        
+        logger.info(f"Categorization complete: {count} alerts processed successfully, {errors} errors")
+        return count
+        
+    except Exception as e:
+        logger.error(f"Error in batch categorization: {str(e)}")
+        db.rollback()
+        return 0  # Return 0 to indicate no alerts were categorized
 
 async def get_dashboard_stats(db: Session) -> dict:
     """Get statistics for the dashboard."""

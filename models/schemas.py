@@ -59,12 +59,7 @@ class HealthAlert(HealthAlertBase):
 
 class HealthAlertCategorization(BaseModel):
     """Model for AI categorization result"""
-    category: str = Field(description="The most appropriate category for this health alert")
-    priority: PriorityLevel = Field(description="The priority level for this health alert")
-    summary: str = Field(description="A concise summary of the health alert")
-    recommendation: str = Field(description="A recommended action to resolve the health alert")
-    
-    # Simple configuration for Pydantic v2 without examples
-    model_config = {
-        "json_schema_extra": {}
-    }
+    category: str
+    priority: str
+    summary: str
+    recommendation: str

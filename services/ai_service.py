@@ -1,6 +1,8 @@
 import os
 import json
 import asyncio
+import traceback
+import logging
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from pydantic_ai import Agent
@@ -9,13 +11,17 @@ from pydantic_ai.providers.heroku import HerokuProvider
 
 from models.schemas import HealthAlertCategorization, HealthAlert
 
+# Set up logger
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 # Get API key from environment - check all possible variable names
 INFERENCE_API_KEY = os.getenv("INFERENCE_API_KEY") or os.getenv("INFERENCE_KEY") or os.getenv("HEROKU_INFERENCE_API_KEY")
 
 if not INFERENCE_API_KEY:
-    print("WARNING: No inference API key found. AI categorization will not work.")
+    logger.warning("No inference API key found. AI categorization will not work.")
+    # Will fall back to default categorization
 
 # Health analyzer prompt instructions
 HEALTH_ANALYZER_INSTRUCTIONS = """
@@ -46,53 +52,47 @@ PRIORITY GUIDELINES:
 Your output must be specific, concrete and directly related to the alert details. Avoid generic responses.
 """
 
-# Initialize the Claude model with Heroku provider
-model = None
-if INFERENCE_API_KEY:
-    model = OpenAIModel(
-        'claude-4-sonnet',
-        provider=HerokuProvider(api_key=INFERENCE_API_KEY)
-    )
+# Define possible categories for the emergency fallback system
+CATEGORIES = [
+    "Configuration", 
+    "Security", 
+    "Performance", 
+    "Data", 
+    "Integration", 
+    "Compliance", 
+    "Code", 
+    "User Experience"
+]
 
-# Define a simplified manual schema that Claude can handle
-SIMPLIFIED_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "category": {
-            "type": "string",
-            "description": "The most appropriate category for this health alert"
-        },
-        "priority": {
-            "type": "string",
-            "description": "The priority level for this health alert",
-            "enum": ["low", "medium", "high", "critical"]
-        },
-        "summary": {
-            "type": "string",
-            "description": "A concise summary of the health alert"
-        },
-        "recommendation": {
-            "type": "string",
-            "description": "A recommended action to resolve the health alert"
-        }
-    },
-    "required": ["category", "priority", "summary", "recommendation"]
-}
+# Define possible priorities
+PRIORITIES = ["low", "medium", "high", "critical"]
 
-# Create a properly configured Pydantic AI agent with manual schema
-health_agent = None
-if model:
-    health_agent = Agent(
-        model,
-        output_schema=SIMPLIFIED_SCHEMA,  # Use our manually defined schema instead of output_type
-        instructions=HEALTH_ANALYZER_INSTRUCTIONS
-    )
+# Initialize the model and agent with simpler configuration
+agent = None
+try:
+    if INFERENCE_API_KEY:
+        # Initialize Claude model with Heroku provider
+        model = OpenAIModel(
+            'claude-3-sonnet-20240229',
+            provider=HerokuProvider(api_key=INFERENCE_API_KEY)
+        )
+        
+        # Create a simple agent without complex parameters
+        agent = Agent(model, instructions=HEALTH_ANALYZER_INSTRUCTIONS)
+        logger.info("AI agent initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize AI agent: {str(e)}")
+    logger.debug(traceback.format_exc())
+    # Don't crash the app if AI initialization fails
+    logger.info("Continuing with fallback categorization")
+
 
 def get_default_categorization(error_message: Optional[str] = None) -> HealthAlertCategorization:
     """Returns a default categorization when AI is unavailable or fails"""
-    summary = "AI categorization unavailable - default category assigned"
+    summary = "AI categorization unavailable"
     if error_message:
         summary += f". Error: {error_message}"
+        logger.warning(f"Using default categorization due to error: {error_message}")
         
     return HealthAlertCategorization(
         category="Configuration",  
@@ -101,19 +101,44 @@ def get_default_categorization(error_message: Optional[str] = None) -> HealthAle
         recommendation="Please configure the AI service with a valid API key"
     )
 
+# Define category-specific fallbacks
+DEFAULT_CATEGORIZATIONS = {
+    "security": HealthAlertCategorization(
+        category="Security", priority="high",
+        summary="Security alert requiring immediate attention.",
+        recommendation="Review security settings and recent changes."
+    ),
+    "limits": HealthAlertCategorization(
+        category="Data", priority="medium",
+        summary="System approaching defined resource limits.",
+        recommendation="Review resource usage and optimize configurations."
+    ),
+    "exceptions": HealthAlertCategorization(
+        category="Code", priority="medium",
+        summary="Application code exceptions detected.",
+        recommendation="Debug error logs and fix application issues."
+    )
+}
+
 async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorization:
     """
-    Categorize a health alert using Claude AI on Heroku.
+    Categorize a health alert using Claude AI.
     
     This function sends the health alert data to Claude for analysis
     and returns a categorization with priority, summary, and recommended actions.
     
     If the AI service is unavailable, returns a default categorization.
     """
-    if not health_agent:
-        return get_default_categorization()
+    if not agent:
+        logger.warning("AI agent not initialized - using default categorization")
+        # Use category-specific fallback if available
+        if alert.category in DEFAULT_CATEGORIZATIONS:
+            return DEFAULT_CATEGORIZATIONS[alert.category]
+        return get_default_categorization("AI agent not available")
     
-    # Format the alert details for the user prompt with more context
+    logger.info(f"Categorizing alert: {getattr(alert, 'id', 'new')} - {alert.title}")
+    
+    # Format the alert details for the user prompt
     user_message = f"""
     Health Alert Details:
     
@@ -129,27 +154,57 @@ async def categorize_health_alert(alert: HealthAlert) -> HealthAlertCategorizati
     try:
         # Set a timeout for the API call to prevent hanging
         try:
-            # Get categorization from the AI agent with timeout handling
-            result_dict = await asyncio.wait_for(health_agent.run(user_message), timeout=30.0)
-            print(f"AI Service response received: {result_dict}")
+                # Call the AI agent with timeout handling
+            raw_result = await asyncio.wait_for(agent.run(user_message), timeout=30.0)
+            logger.debug(f"AI response received: {raw_result}")
             
-            # Convert the raw dict to our Pydantic model
-            try:
-                # Try to parse the result into our Pydantic model
+            # Convert the result to the expected format
+            if isinstance(raw_result, dict):
                 result = HealthAlertCategorization(
-                    category=result_dict.get('category', 'Configuration'),
-                    priority=result_dict.get('priority', 'medium'),
-                    summary=result_dict.get('summary', 'AI analysis completed but produced incomplete results.'),
-                    recommendation=result_dict.get('recommendation', 'Review the alert details manually for appropriate action.')
+                    category=raw_result.get('category', 'Configuration'),
+                    priority=raw_result.get('priority', 'medium'),
+                    summary=raw_result.get('summary', 'Analysis completed.'),
+                    recommendation=raw_result.get('recommendation', 'Review alert details.')
                 )
                 return result
-            except Exception as parsing_error:
-                print(f"Error parsing AI result: {parsing_error}")
-                print(f"Raw AI result: {result_dict}")
-                return get_default_categorization(f"Error parsing result: {str(parsing_error)}")
+            elif isinstance(raw_result, str):
+                # Handle string response by extracting JSON if possible
+                try:
+                    json_data = json.loads(raw_result)
+                    return HealthAlertCategorization(
+                        category=json_data.get('category', 'Configuration'),
+                        priority=json_data.get('priority', 'medium'),
+                        summary=json_data.get('summary', 'Analysis completed.'),
+                        recommendation=json_data.get('recommendation', 'Review alert details.')
+                    )
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse string response as JSON: {raw_result[:100]}...")
+                    # If not valid JSON, use default with raw response as summary
+                    return HealthAlertCategorization(
+                        category="Configuration",
+                        priority="medium",
+                        summary=raw_result[:200] if len(raw_result) > 200 else raw_result,
+                        recommendation="Review alert details and take appropriate action."
+                    )
+            else:
+                # Unexpected response format
+                logger.error(f"Unexpected response type: {type(raw_result)}")
+                # Use category-specific fallback if available
+                if alert.category in DEFAULT_CATEGORIZATIONS:
+                    return DEFAULT_CATEGORIZATIONS[alert.category]
+                return get_default_categorization(f"Unexpected response type: {type(raw_result)}")
+            
         except asyncio.TimeoutError:
-            print("AI categorization timed out after 30 seconds")
-            return get_default_categorization("Request timed out after 30 seconds")
+            logger.warning("AI request timed out after 30 seconds")
+            # Use category-specific fallback if available
+            if alert.category in DEFAULT_CATEGORIZATIONS:
+                return DEFAULT_CATEGORIZATIONS[alert.category]
+            return get_default_categorization("Request timed out")
     except Exception as e:
-        print(f"Error in AI categorization: {str(e)}")
-        return get_default_categorization(str(e))
+        logger.error(f"Error in AI categorization: {str(e)}")
+        logger.debug(traceback.format_exc())
+        # Use category-specific fallback if available
+        if alert.category in DEFAULT_CATEGORIZATIONS:
+            return DEFAULT_CATEGORIZATIONS[alert.category]
+        return get_default_categorization(f"Error: {str(e)[:100]}")
+
