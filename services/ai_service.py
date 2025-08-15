@@ -17,11 +17,17 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Get API key from environment - check all possible variable names
-INFERENCE_API_KEY = os.getenv("INFERENCE_API_KEY") or os.getenv("INFERENCE_KEY") or os.getenv("HEROKU_INFERENCE_API_KEY")
+INFERENCE_API_KEY = os.getenv("HEROKU_INFERENCE_API_KEY") or os.getenv("INFERENCE_API_KEY") or os.getenv("INFERENCE_KEY")
+
+# Get model ID and URL from environment
+INFERENCE_MODEL_ID = os.getenv("INFERENCE_MODEL_ID", "claude-4-sonnet")
+INFERENCE_URL = os.getenv("INFERENCE_URL", "https://us.inference.heroku.com")
 
 if not INFERENCE_API_KEY:
     logger.warning("No inference API key found. AI categorization will not work.")
     # Will fall back to default categorization
+else:
+    logger.info(f"Using model: {INFERENCE_MODEL_ID} with Heroku AI")
 
 # Health analyzer prompt instructions
 HEALTH_ANALYZER_INSTRUCTIONS = """
@@ -73,8 +79,11 @@ try:
     if INFERENCE_API_KEY:
         # Initialize Claude model with Heroku provider
         model = OpenAIModel(
-            'claude-3-sonnet-20240229',
-            provider=HerokuProvider(api_key=INFERENCE_API_KEY)
+            INFERENCE_MODEL_ID,
+            provider=HerokuProvider(
+                api_key=INFERENCE_API_KEY,
+                base_url=INFERENCE_URL
+            )
         )
         
         # Create a simple agent without complex parameters
